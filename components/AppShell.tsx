@@ -10,8 +10,7 @@ export default function AppShell({ title, children }: { title: string; children:
   const { user } = useAuth()
 
   async function onLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/logout')
   }
 
   return (

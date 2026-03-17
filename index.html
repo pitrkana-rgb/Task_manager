@@ -122,8 +122,14 @@
         </div>
         <div class="dash-col-right">
           <div class="dash-weekly-goals-card">
-            <div class="section-ttl" style="margin-bottom:12px">Přehled týdenních výzev</div>
-            <div class="dash-wg-list" id="dash-wg-list"></div>
+            <div class="dash-collapsible-head">
+              <div class="dash-collapse-spacer" aria-hidden="true"></div>
+              <div class="section-ttl" style="margin-bottom:0;flex:1">Přehled týdenních výzev</div>
+              <button class="btn-primary" onclick="openGoalModal()"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nová výzva</button>
+            </div>
+            <div class="dash-weekly-goals-body">
+              <div class="dash-wg-list" id="dash-wg-list"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -221,57 +227,157 @@
   <!-- STATISTICS (Týdenní plnění) -->
   <div class="page" id="page-stats">
     <div class="scroll-area">
-      <div class="eval-hero">
-        <div class="eval-hero-top">
+      <div class="sum-hero">
+        <div>
+          <div class="page-title stats-page-ttl">Vyhodnocení</div>
+          <div class="page-sub">Celkové plnění úkolů a denní výkon</div>
+        </div>
+      </div>
+
+      <div class="sum-section">
+        <div class="sum-head">
           <div>
-            <div class="page-title stats-page-ttl">Vyhodnocení</div>
-            <div class="page-sub">Souhrn vašich úspěchů a výkonu v čase</div>
-          </div>
-          <div class="eval-highlight">
-            <div class="eh-label">Aktuální série</div>
-            <div class="eh-value" id="ev-streak">0</div>
-            <div class="eh-sub" id="ev-streak-sub">dní v řadě</div>
-            <div class="eh-trend" id="ev-trend">—</div>
+            <div class="sum-title">Celkové plnění</div>
+            <div class="sum-sub">Souhrn napříč časem</div>
           </div>
         </div>
-        <div class="eval-kpis">
-          <div class="eval-kpi"><div class="ek-label">Total Tasks Created</div><div class="ek-value" id="ev-total-created">0</div><div class="ek-sub" id="ev-total-created-sub">—</div></div>
-          <div class="eval-kpi"><div class="ek-label">Total Tasks Completed</div><div class="ek-value" id="ev-total-completed">0</div><div class="ek-sub" id="ev-total-completed-sub">—</div></div>
-          <div class="eval-kpi"><div class="ek-label">Activities Completed</div><div class="ek-value" id="ev-acts-completed">0</div><div class="ek-sub" id="ev-acts-completed-sub">—</div></div>
-          <div class="eval-kpi"><div class="ek-label">Challenges Completed</div><div class="ek-value" id="ev-ch-completed">0</div><div class="ek-sub" id="ev-ch-completed-sub">—</div></div>
-          <div class="eval-kpi"><div class="ek-label">Overall Completion Rate</div><div class="ek-value" id="ev-overall-rate">0%</div><div class="ek-sub" id="ev-overall-rate-sub">—</div></div>
-          <div class="eval-kpi"><div class="ek-label">Productive Days</div><div class="ek-value" id="ev-prod-days">0</div><div class="ek-sub" id="ev-prod-days-sub">—</div></div>
+
+        <div class="sum-kpis-3">
+          <div class="sum-bigcard">
+            <div class="sbc-top">
+              <div class="sbc-ttl">Úkoly</div>
+              <div class="sbc-sub">Celkové plnění úkolů</div>
+            </div>
+            <div class="sbc-body">
+              <div class="sbc-left">
+                <div class="srow">
+                  <div class="srow-l">Celkem vytvořeno</div>
+                  <div class="srow-v" id="sum-t-created">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Celkem splněno</div>
+                  <div class="srow-v" id="sum-t-completed">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Dní 100%</div>
+                  <div class="srow-v" id="sum-t-perfect">0</div>
+                </div>
+              </div>
+              <div class="sbc-right">
+                <div class="sum-pie sum-pie-tall">
+                  <svg class="sum-pie-svg" viewBox="0 0 100 100" id="sum-t-pie"></svg>
+                  <div class="sum-pie-center">
+                    <div class="sum-pie-pct" id="sum-t-pct">0%</div>
+                    <div class="sum-pie-sub" id="sum-t-sub">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sum-bigcard">
+            <div class="sbc-top">
+              <div class="sbc-ttl">Aktivity</div>
+              <div class="sbc-sub">Celkové plnění aktivit</div>
+            </div>
+            <div class="sbc-body">
+              <div class="sbc-left">
+                <div class="srow">
+                  <div class="srow-l">Celkem vytvořeno</div>
+                  <div class="srow-v" id="sum-a-created">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Celkem splněno</div>
+                  <div class="srow-v" id="sum-a-completed">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Dní 100%</div>
+                  <div class="srow-v" id="sum-a-perfect">0</div>
+                </div>
+              </div>
+              <div class="sbc-right">
+                <div class="sum-pie sum-pie-tall">
+                  <svg class="sum-pie-svg" viewBox="0 0 100 100" id="sum-a-pie"></svg>
+                  <div class="sum-pie-center">
+                    <div class="sum-pie-pct" id="sum-a-pct">0%</div>
+                    <div class="sum-pie-sub" id="sum-a-sub">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sum-bigcard">
+            <div class="sbc-top">
+              <div class="sbc-ttl">Výzvy</div>
+              <div class="sbc-sub">Celkové plnění výzev</div>
+            </div>
+            <div class="sbc-body">
+              <div class="sbc-left">
+                <div class="srow">
+                  <div class="srow-l">Celkem vytvořeno</div>
+                  <div class="srow-v" id="sum-g-created">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Celkem splněno</div>
+                  <div class="srow-v" id="sum-g-completed">0</div>
+                </div>
+                <div class="srow">
+                  <div class="srow-l">Týdnů 100%</div>
+                  <div class="srow-v" id="sum-g-perfect">0</div>
+                </div>
+              </div>
+              <div class="sbc-right">
+                <div class="sum-pie sum-pie-tall">
+                  <svg class="sum-pie-svg" viewBox="0 0 100 100" id="sum-g-pie"></svg>
+                  <div class="sum-pie-center">
+                    <div class="sum-pie-pct" id="sum-g-pct">0%</div>
+                    <div class="sum-pie-sub" id="sum-g-sub">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="eval-card">
-        <div class="eval-card-head">
-          <div class="eval-card-title">Performance trend</div>
-          <div class="eval-toggle">
-            <button class="eval-tbtn active" id="ev-tbtn-tasks" onclick="setEvalMetric('tasks')">Tasks</button>
-            <button class="eval-tbtn" id="ev-tbtn-activities" onclick="setEvalMetric('activities')">Activities</button>
-            <button class="eval-tbtn" id="ev-tbtn-challenges" onclick="setEvalMetric('challenges')">Challenges</button>
+      <div class="sum-card">
+        <div class="sum-card-head">
+          <div>
+            <div class="sum-card-title">Vyhodnocení úkolů</div>
+            <div class="sum-card-sub">Vytvořeno (plán) vs. splněno + míra plnění</div>
           </div>
         </div>
-        <div class="eval-chart-wrap">
-          <canvas id="ev-chart" height="120"></canvas>
+        <div class="sum-chart-wrap">
+          <canvas id="sum-daily-chart" height="180"></canvas>
         </div>
-        <div class="eval-chart-legend" id="ev-chart-legend">—</div>
+        <div class="sum-chart-legend" id="sum-daily-legend">—</div>
       </div>
 
-      <div class="eval-insights">
-        <div class="eval-insight" id="ev-ins-1"></div>
-        <div class="eval-insight" id="ev-ins-2"></div>
-        <div class="eval-insight" id="ev-ins-3"></div>
-        <div class="eval-insight" id="ev-ins-4"></div>
+      <div class="sum-card" style="margin-top:14px">
+        <div class="sum-card-head">
+          <div>
+            <div class="sum-card-title">Vyhodnocení aktivit</div>
+            <div class="sum-card-sub">Vytvořeno (plán) vs. splněno + míra plnění</div>
+          </div>
+        </div>
+        <div class="sum-chart-wrap">
+          <canvas id="sum-acts-chart" height="180"></canvas>
+        </div>
+        <div class="sum-chart-legend" id="sum-acts-legend">—</div>
       </div>
 
-      <div class="eval-card">
-        <div class="eval-card-head">
-          <div class="eval-card-title">Weekly performance</div>
-          <div class="eval-card-sub">Kliknutím zobrazíte náhled detailů</div>
+      <div class="sum-card" style="margin-top:14px">
+        <div class="sum-card-head">
+          <div>
+            <div class="sum-card-title">Vyhodnocení výzev</div>
+            <div class="sum-card-sub">Týdenní agregace: vytvořeno vs. splněno + míra plnění</div>
+          </div>
         </div>
-        <div class="eval-week-grid" id="ev-week-grid"></div>
+        <div class="sum-chart-wrap">
+          <canvas id="sum-goals-chart" height="180"></canvas>
+        </div>
+        <div class="sum-chart-legend" id="sum-goals-legend">—</div>
       </div>
     </div>
   </div>
@@ -327,6 +433,10 @@
   <div class="modal">
     <div class="modal-hdr"><div class="modal-ttl" id="task-modal-title">Nový úkol</div><button class="modal-x" onclick="closeTaskModal()">✕</button></div>
     <div class="field"><label class="flabel">Název</label><input class="finput" id="tm-title" placeholder="Co je potřeba udělat?"/></div>
+    <div class="field"><label class="flabel">Detailní body</label>
+      <div class="bullet-list" id="tm-bullets"></div>
+      <div class="b-add-row"><input class="b-inp" id="tm-bi" placeholder="Přidat položku..."/><button class="b-add-btn" onclick="addBullet()">+ Přidat</button></div>
+    </div>
     <div class="frow">
       <div class="field"><label class="flabel">Priorita</label><select class="fselect" id="tm-priority"><option value="medium">Střední</option><option value="high">Vysoká</option><option value="low">Nízká</option></select></div>
       <div class="field"><label class="flabel">Oblast</label><select class="fselect" id="tm-ws"><option value="work">Práce</option><option value="personal">Osobní</option></select></div>
@@ -343,10 +453,6 @@
         <div class="recur-chip" data-v="weekdays" onclick="selRecur(this)">Pracovní dny</div>
         <div class="recur-chip" data-v="monthly" onclick="selRecur(this)">Měsíčně</div>
       </div>
-    </div>
-    <div class="field"><label class="flabel">Seznam bodů</label>
-      <div class="bullet-list" id="tm-bullets"></div>
-      <div class="b-add-row"><input class="b-inp" id="tm-bi" placeholder="Přidat položku..."/><button class="b-add-btn" onclick="addBullet()">+ Přidat</button></div>
     </div>
     <div class="modal-footer"><button class="btn-cancel" onclick="closeTaskModal()">Zrušit</button><button class="btn-save" id="tm-save-btn" onclick="saveTask()">Přidat úkol</button></div>
   </div>

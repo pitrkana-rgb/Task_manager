@@ -130,8 +130,11 @@ function enterApp(pid){
   document.getElementById('profile-screen').style.display='none';
   document.getElementById('app').classList.add('show');initApp();
 }
-function signOut(e){e.stopPropagation();activeProfileId=null;state.activeProfile=null;saveState();
-  document.getElementById('app').classList.remove('show');document.getElementById('profile-screen').style.display='flex';renderProfileScreen()}
+function signOut(e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  activeProfileId=null;state.activeProfile=null;saveState();
+  try{ if(window.top) window.top.location.href='/logout'; else window.location.href='/logout'; }catch(_){ window.location.href='/logout'; }
+}
 
 // ═══════ APP INIT ═══════
 function initApp(){
@@ -882,105 +885,62 @@ function setEvalMetric(m){
 
 function renderStats(){
   const d=getPD();if(!d)return;
+  const all=[...d.tasks.work,...d.tasks.personal];
   if(!d.activities)d.activities=[];
   if(!d.activityLog)d.activityLog={};
 
-  const all=[...d.tasks.work,...d.tasks.personal];
-  const totalTasks=all.length;
-  const completedTasks=all.filter(t=>t.status==='completed').length;
-  const actsCompleted=Object.entries(d.activityLog).filter(([,v])=>v===true).length;
-  let chCompleted=0,chTotal=0;
+  const setTxt=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+
+  // ÚKOLY
+  const tCreated=all.length;
+  const tCompleted=all.filter(t=>t.status==='completed').length;
+  const tPct=tCreated?Math.round((tCompleted/tCreated)*100):0;
+  const tPerfect=countPerfectDaysTasks(all,366);
+  setTxt('sum-t-created',tCreated);
+  setTxt('sum-t-completed',tCompleted);
+  setTxt('sum-t-perfect',tPerfect);
+  setTxt('sum-t-pct',tPct+'%');
+  setTxt('sum-t-sub',tCreated?`${tCompleted} / ${tCreated}`:'—');
+  const tPie=document.getElementById('sum-t-pie');if(tPie)renderPieIn(tPie,tPct,'var(--accent)');
+
+  // AKTIVITY
+  const aCreated=d.activities.length;
+  const aCompleted=Object.entries(d.activityLog).filter(([,v])=>v===true).length;
+  const aPct=aCreated?Math.round((aCompleted/aCreated)*100):0;
+  const aPerfect=countPerfectDaysActivities(d,366);
+  setTxt('sum-a-created',aCreated);
+  setTxt('sum-a-completed',aCompleted);
+  setTxt('sum-a-perfect',aPerfect);
+  setTxt('sum-a-pct',aPct+'%');
+  setTxt('sum-a-sub',aCreated?`${aCompleted} / ${aCreated}`:'—');
+  const aPie=document.getElementById('sum-a-pie');if(aPie)renderPieIn(aPie,aPct,'var(--accent)');
+
+  // VÝZVY (týdny)
+  let gCreated=0,gCompleted=0,gPerfect=0;
   Object.entries(d.weeklyGoals||{}).forEach(([wk,goals])=>{
     if(!goals||!goals.length)return;
-    const r=goalWeekPct(d,wk);
-    chCompleted+=r.completed;chTotal+=r.total;
+    gCreated+=goals.length;
+    let wkDone=0;
+    goals.forEach(g=>{
+      let pct=0;
+      if(g.type==='habit'){const days=g.days||[];pct=Math.round((days.filter(Boolean).length/7)*100)}
+      else{const entries=g.entries||[];const s=entries.reduce((a,b)=>a+b,0);pct=Math.min(100,Math.round((s/(g.target||1))*100))}
+      if(pct>=100) wkDone++;
+    });
+    gCompleted+=wkDone;
+    if(wkDone===goals.length) gPerfect++;
   });
-  const overallTotal=totalTasks + d.activities.length + chTotal;
-  const overallDone=completedTasks + actsCompleted + chCompleted;
-  const overallRate=overallTotal?Math.round((overallDone/overallTotal)*100):0;
+  const gPct=gCreated?Math.round((gCompleted/gCreated)*100):0;
+  setTxt('sum-g-created',gCreated);
+  setTxt('sum-g-completed',gCompleted);
+  setTxt('sum-g-perfect',gPerfect);
+  setTxt('sum-g-pct',gPct+'%');
+  setTxt('sum-g-sub',gCreated?`${gCompleted} / ${gCreated}`:'—');
+  const gPie=document.getElementById('sum-g-pie');if(gPie)renderPieIn(gPie,gPct,'var(--accent)');
 
-  // productive days: union of completed task days and completed activity days
-  const prodDays=new Set();
-  (d.completedDates||[]).forEach(ds=>prodDays.add(ds));
-  Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true)prodDays.add(k.split('_')[0])});
-
-  const streak=calcStreak(d);
-  const evSt=document.getElementById('ev-streak');if(evSt)evSt.textContent=streak;
-  const evTr=document.getElementById('ev-trend');
-
-  const setTxt=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-  setTxt('ev-total-created',totalTasks);
-  setTxt('ev-total-completed',completedTasks);
-  setTxt('ev-acts-completed',actsCompleted);
-  setTxt('ev-ch-completed',chCompleted);
-  setTxt('ev-overall-rate',overallRate+'%');
-  setTxt('ev-prod-days',prodDays.size);
-
-  // trend vs last week
-  const thisMon=getMon(new Date());
-  const lastMon=new Date(thisMon);lastMon.setDate(thisMon.getDate()-7);
-  const prevMon=new Date(thisMon);prevMon.setDate(thisMon.getDate()-14);
-  const wkNow=weekKey(lastMon),wkPrev=weekKey(prevMon);
-  const weekDone=(wk)=>{
-    const mon=getWeekMonFromKey(wk);if(!mon)return 0;
-    let td=0;
-    all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk && t.status==='completed').forEach(()=>td++);
-    let ad=0;
-    for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true && k.startsWith(ds+'_'))ad++})}
-    const gd=goalWeekPct(d,wk).completed;
-    return td+ad+gd;
-  };
-  const nowVal=weekDone(wkNow),prevVal=weekDone(wkPrev);
-  const delta=prevVal?Math.round(((nowVal-prevVal)/prevVal)*100):0;
-  if(evTr)evTr.textContent=prevVal?`${delta>=0?'+':''}${delta}% vs last week`:'—';
-
-  // insights
-  const ins=(id,ic,txt)=>{const el=document.getElementById(id);if(el)el.innerHTML=`<div class="ei-ic">${ic}</div><div class="ei-txt">${txt}</div>`;};
-  const taskRate=totalTasks?Math.round((completedTasks/totalTasks)*100):0;
-  ins('ev-ins-1','✅',`You complete <b>${taskRate}%</b> of your tasks.`); 
-  // most productive weekday
-  const wdCount=[0,0,0,0,0,0,0];
-  prodDays.forEach(ds=>{const dt=new Date(ds+'T00:00:00');wdCount[dt.getDay()]++;});
-  const wdNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const bestWd=wdCount.indexOf(Math.max(...wdCount));
-  ins('ev-ins-2','📅',`Most productive day: <b>${wdNames[bestWd]}</b>.`);
-  // best week
-  const wkKeys=new Set();
-  all.forEach(t=>{if(t.dueDate)wkKeys.add(weekKey(new Date(t.dueDate+'T00:00:00')));});
-  Object.keys(d.weeklyGoals||{}).forEach(wk=>{if(d.weeklyGoals[wk]&&d.weeklyGoals[wk].length)wkKeys.add(wk);});
-  if(d.activities.length){ // include weeks since earliest activity date
-    d.activities.forEach(a=>{if(a.date)wkKeys.add(weekKey(new Date(a.date+'T00:00:00')));});
-  }
-  let bestWeek=null,bestPct=-1;
-  wkKeys.forEach(wk=>{
-    const mon=getWeekMonFromKey(wk);if(!mon)return;
-    let tPl=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk).length;
-    let tDn=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk && t.status==='completed').length;
-    // activities planned/completed by day matching
-    let aPl=0,aDn=0;
-    for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);aPl+=getActivitiesForDate(d,ds).length;Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true && k.startsWith(ds+'_'))aDn++;})}
-    const g=goalWeekPct(d,wk);
-    const tot=tPl+aPl+g.total,don=tDn+aDn+g.completed;
-    const pct=tot?Math.round((don/tot)*100):0;
-    if(pct>bestPct){bestPct=pct;bestWeek=wk;}
-  });
-  if(bestWeek){const mon=getWeekMonFromKey(bestWeek);const fri=new Date(mon);fri.setDate(mon.getDate()+4);ins('ev-ins-3','🏆',`Best week: <b>Week ${weekNum(mon)}</b> (${fshort(mon)}–${fshort(fri)}).`);}
-  else ins('ev-ins-3','🏆',`Best week: —`);
-  // activity drop last 3 days
-  const today=todayStr();
-  const last3=[0,1,2].map(i=>{const dt=new Date(today+'T00:00:00');dt.setDate(dt.getDate()-i);return dsDate(dt);});
-  const prev3=[3,4,5].map(i=>{const dt=new Date(today+'T00:00:00');dt.setDate(dt.getDate()-i);return dsDate(dt);});
-  const cntActs=(arr)=>arr.reduce((sum,ds)=>sum+Object.entries(d.activityLog).filter(([k,v])=>v===true && k.startsWith(ds+'_')).length,0);
-  const l3=cntActs(last3),p3=cntActs(prev3);
-  if(p3 && l3<p3) ins('ev-ins-4','📉',`Activity dropped in last 3 days (${l3} vs ${p3}).`);
-  else ins('ev-ins-4','📈',`Activity is steady in last 3 days (${l3}).`);
-
-  // chart (last 12 weeks)
-  const canvas=document.getElementById('ev-chart');
-  if(canvas) drawEvalChart(canvas,d,all);
-
-  // weekly grid
-  const grid=document.getElementById('ev-week-grid');if(grid) renderEvalWeekGrid(grid,d,all);
+  const c1=document.getElementById('sum-daily-chart');if(c1)drawDailyTasksChart(c1,all);
+  const c2=document.getElementById('sum-acts-chart');if(c2)drawDailyActivitiesChart(c2,d);
+  const c3=document.getElementById('sum-goals-chart');if(c3)drawWeeklyChallengesChart(c3,d);
 }
 
 function drawEvalChart(canvas,d,all){
@@ -1057,6 +1017,271 @@ function renderEvalWeekGrid(grid,d,all){
     const pie=card.querySelector('svg');if(pie)renderPieIn(pie,pct,'var(--accent)');
     grid.appendChild(card);
   });
+}
+
+function drawDailyTasksChart(canvas,all){
+  const ctx=canvas.getContext('2d');if(!ctx)return;
+  const DPR=window.devicePixelRatio||1;
+  const w=canvas.width=Math.floor(canvas.clientWidth*DPR);
+  const h=canvas.height=Math.floor((parseInt(canvas.getAttribute('height')||'180',10))*DPR);
+  ctx.clearRect(0,0,w,h);
+
+  const days=14;
+  const labels=[],created=[],completed=[],rates=[];
+  for(let i=days-1;i>=0;i--){
+    const dt=new Date();dt.setDate(dt.getDate()-i);
+    const ds=dsDate(dt);
+    labels.push(pad(dt.getDate())+'.'+pad(dt.getMonth()+1)+'.');
+    const planned=all.filter(t=>isRecurToday(t,ds));
+    const c=planned.length;
+    const dn=planned.filter(t=>t.status==='completed').length;
+    created.push(c);
+    completed.push(dn);
+    rates.push(c?Math.round((dn/c)*100):0);
+  }
+
+  const padX=26*DPR,padY=22*DPR;
+  const chartW=w-padX*2,chartH=h-padY*2;
+  const maxBar=Math.max(1,...created,...completed);
+
+  const xStep=chartW/days;
+  const barW=Math.max(6*DPR,Math.min(16*DPR,xStep*0.28));
+  const gap=barW*0.35;
+
+  const yBar=(v)=>padY+(1-(v/maxBar))*chartH;
+  const yLine=(p)=>padY+(1-(p/100))*chartH;
+
+  ctx.strokeStyle='rgba(15,16,34,.08)';
+  ctx.lineWidth=1*DPR;
+  for(let i=0;i<=4;i++){
+    const yy=padY+(chartH*(i/4));
+    ctx.beginPath();ctx.moveTo(padX,yy);ctx.lineTo(w-padX,yy);ctx.stroke();
+  }
+
+  for(let i=0;i<days;i++){
+    const cx=padX+xStep*i+xStep/2;
+    const y0=padY+chartH;
+    const yC=yBar(created[i]);
+    const yD=yBar(completed[i]);
+    ctx.fillStyle='rgba(79,70,229,.28)';
+    ctx.fillRect(cx-(barW+gap/2),yC,barW,y0-yC);
+    ctx.fillStyle='rgba(16,185,129,.55)';
+    ctx.fillRect(cx+(gap/2),yD,barW,y0-yD);
+  }
+
+  ctx.strokeStyle='rgba(245,158,11,.95)';
+  ctx.lineWidth=2*DPR;
+  let started=false;
+  ctx.beginPath();
+  for(let i=0;i<days;i++){
+    if(created[i]===0){started=false;continue;}
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]);
+    if(!started){ctx.moveTo(cx,yy);started=true;} else ctx.lineTo(cx,yy);
+  }
+  ctx.stroke();
+
+  for(let i=0;i<days;i++){
+    if(created[i]===0) continue;
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]);
+    ctx.beginPath();ctx.arc(cx,yy,3.2*DPR,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='rgba(245,158,11,.95)';
+    ctx.lineWidth=2*DPR;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle='rgba(15,16,34,.55)';
+  ctx.font=`${10*DPR}px "Fira Code", monospace`;
+  for(let i=0;i<days;i++){
+    if(i%2!==0)continue;
+    const cx=padX+xStep*i+xStep/2;
+    ctx.fillText(labels[i],cx-12*DPR,h-6*DPR);
+  }
+
+  const legend=document.getElementById('sum-daily-legend');
+  if(legend){
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno (plán) &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+  }
+}
+
+function countPerfectDaysTasks(all,backDays){
+  let cnt=0;
+  const now=new Date();
+  for(let i=0;i<backDays;i++){
+    const dt=new Date(now);dt.setDate(now.getDate()-i);
+    const ds=dsDate(dt);
+    const planned=all.filter(t=>isRecurToday(t,ds));
+    if(!planned.length) continue;
+    const dn=planned.filter(t=>t.status==='completed').length;
+    if(dn===planned.length) cnt++;
+  }
+  return cnt;
+}
+
+function countPerfectDaysActivities(d,backDays){
+  let cnt=0;
+  const now=new Date();
+  for(let i=0;i<backDays;i++){
+    const dt=new Date(now);dt.setDate(now.getDate()-i);
+    const ds=dsDate(dt);
+    const planned=getActivitiesForDate(d,ds);
+    if(!planned.length) continue;
+    let dn=0;
+    planned.forEach(a=>{const key=ds+'_'+a.sportId;if(d.activityLog[key]===true)dn++;});
+    if(dn===planned.length) cnt++;
+  }
+  return cnt;
+}
+
+function drawDailyActivitiesChart(canvas,d){
+  const ctx=canvas.getContext('2d');if(!ctx)return;
+  const DPR=window.devicePixelRatio||1;
+  const w=canvas.width=Math.floor(canvas.clientWidth*DPR);
+  const h=canvas.height=Math.floor((parseInt(canvas.getAttribute('height')||'180',10))*DPR);
+  ctx.clearRect(0,0,w,h);
+
+  const days=14;
+  const labels=[],created=[],completed=[],rates=[];
+  for(let i=days-1;i>=0;i--){
+    const dt=new Date();dt.setDate(dt.getDate()-i);
+    const ds=dsDate(dt);
+    labels.push(pad(dt.getDate())+'.'+pad(dt.getMonth()+1)+'.');
+    const planned=getActivitiesForDate(d,ds);
+    const c=planned.length;
+    let dn=0;planned.forEach(a=>{const key=ds+'_'+a.sportId;if(d.activityLog[key]===true)dn++;});
+    created.push(c);completed.push(dn);rates.push(c?Math.round((dn/c)*100):0);
+  }
+
+  const padX=26*DPR,padY=22*DPR;
+  const chartW=w-padX*2,chartH=h-padY*2;
+  const maxBar=Math.max(1,...created,...completed);
+  const xStep=chartW/days;
+  const barW=Math.max(6*DPR,Math.min(16*DPR,xStep*0.28));
+  const gap=barW*0.35;
+  const yBar=(v)=>padY+(1-(v/maxBar))*chartH;
+  const yLine=(p)=>padY+(1-(p/100))*chartH;
+
+  ctx.strokeStyle='rgba(15,16,34,.08)';ctx.lineWidth=1*DPR;
+  for(let i=0;i<=4;i++){const yy=padY+(chartH*(i/4));ctx.beginPath();ctx.moveTo(padX,yy);ctx.lineTo(w-padX,yy);ctx.stroke();}
+
+  for(let i=0;i<days;i++){
+    const cx=padX+xStep*i+xStep/2;
+    const y0=padY+chartH;
+    const yC=yBar(created[i]);
+    const yD=yBar(completed[i]);
+    ctx.fillStyle='rgba(79,70,229,.28)';
+    ctx.fillRect(cx-(barW+gap/2),yC,barW,y0-yC);
+    ctx.fillStyle='rgba(16,185,129,.55)';
+    ctx.fillRect(cx+(gap/2),yD,barW,y0-yD);
+  }
+
+  ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=2*DPR;
+  let started=false;ctx.beginPath();
+  for(let i=0;i<days;i++){
+    if(created[i]===0){started=false;continue;}
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]);
+    if(!started){ctx.moveTo(cx,yy);started=true;} else ctx.lineTo(cx,yy);
+  }
+  ctx.stroke();
+
+  for(let i=0;i<days;i++){
+    if(created[i]===0) continue;
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]);
+    ctx.beginPath();ctx.arc(cx,yy,3.2*DPR,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=2*DPR;ctx.stroke();
+  }
+
+  ctx.fillStyle='rgba(15,16,34,.55)';
+  ctx.font=`${10*DPR}px "Fira Code", monospace`;
+  for(let i=0;i<days;i++){if(i%2!==0)continue;const cx=padX+xStep*i+xStep/2;ctx.fillText(labels[i],cx-12*DPR,h-6*DPR);}
+
+  const legend=document.getElementById('sum-acts-legend');
+  if(legend){
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno (plán) &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+  }
+}
+
+function drawWeeklyChallengesChart(canvas,d){
+  const ctx=canvas.getContext('2d');if(!ctx)return;
+  const DPR=window.devicePixelRatio||1;
+  const w=canvas.width=Math.floor(canvas.clientWidth*DPR);
+  const h=canvas.height=Math.floor((parseInt(canvas.getAttribute('height')||'180',10))*DPR);
+  ctx.clearRect(0,0,w,h);
+
+  const keys=Object.keys(d.weeklyGoals||{}).sort();
+  const last=keys.slice(-12);
+  const labels=[],created=[],completed=[],rates=[];
+  last.forEach(wk=>{
+    const mon=getWeekMonFromKey(wk);
+    labels.push(mon?('T'+weekNum(mon)):'Týd.');
+    const goals=(d.weeklyGoals[wk]||[]);
+    const c=goals.length;
+    let dn=0;
+    goals.forEach(g=>{
+      let pct=0;
+      if(g.type==='habit'){const days=g.days||[];pct=Math.round((days.filter(Boolean).length/7)*100)}
+      else{const entries=g.entries||[];const s=entries.reduce((a,b)=>a+b,0);pct=Math.min(100,Math.round((s/(g.target||1))*100))}
+      if(pct>=100) dn++;
+    });
+    created.push(c);completed.push(dn);rates.push(c?Math.round((dn/c)*100):0);
+  });
+
+  const padX=26*DPR,padY=22*DPR;
+  const chartW=w-padX*2,chartH=h-padY*2;
+  const maxBar=Math.max(1,...created,...completed);
+  const n=Math.max(1,labels.length);
+  const xStep=chartW/n;
+  const barW=Math.max(6*DPR,Math.min(16*DPR,xStep*0.28));
+  const gap=barW*0.35;
+  const yBar=(v)=>padY+(1-(v/maxBar))*chartH;
+  const yLine=(p)=>padY+(1-(p/100))*chartH;
+
+  ctx.strokeStyle='rgba(15,16,34,.08)';ctx.lineWidth=1*DPR;
+  for(let i=0;i<=4;i++){const yy=padY+(chartH*(i/4));ctx.beginPath();ctx.moveTo(padX,yy);ctx.lineTo(w-padX,yy);ctx.stroke();}
+
+  for(let i=0;i<n;i++){
+    const cx=padX+xStep*i+xStep/2;
+    const y0=padY+chartH;
+    const yC=yBar(created[i]||0);
+    const yD=yBar(completed[i]||0);
+    ctx.fillStyle='rgba(79,70,229,.28)';
+    ctx.fillRect(cx-(barW+gap/2),yC,barW,y0-yC);
+    ctx.fillStyle='rgba(16,185,129,.55)';
+    ctx.fillRect(cx+(gap/2),yD,barW,y0-yD);
+  }
+
+  ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=2*DPR;
+  let started=false;ctx.beginPath();
+  for(let i=0;i<n;i++){
+    if((created[i]||0)===0){started=false;continue;}
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]||0);
+    if(!started){ctx.moveTo(cx,yy);started=true;} else ctx.lineTo(cx,yy);
+  }
+  ctx.stroke();
+
+  for(let i=0;i<n;i++){
+    if((created[i]||0)===0) continue;
+    const cx=padX+xStep*i+xStep/2;
+    const yy=yLine(rates[i]||0);
+    ctx.beginPath();ctx.arc(cx,yy,3.2*DPR,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=2*DPR;ctx.stroke();
+  }
+
+  ctx.fillStyle='rgba(15,16,34,.55)';
+  ctx.font=`${10*DPR}px "Fira Code", monospace`;
+  for(let i=0;i<n;i++){if(i%2!==0)continue;const cx=padX+xStep*i+xStep/2;ctx.fillText(labels[i],cx-12*DPR,h-6*DPR);}
+
+  const legend=document.getElementById('sum-goals-legend');
+  if(legend){
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+  }
 }
 function renderHeatmap(d){
   const wrap=document.getElementById('heatmap-wrap');if(!wrap)return;wrap.innerHTML='';
@@ -1257,12 +1482,10 @@ function boot() {
     const ps = document.getElementById('profile-screen'); if (ps) ps.style.display = 'none';
     document.getElementById('app').classList.add('show');
     initApp();
-  } else if (activeProfileId && state.profiles[activeProfileId]) {
-    document.getElementById('profile-screen').style.display = 'none';
-    document.getElementById('app').classList.add('show');
-    initApp();
   } else {
-    renderProfileScreen();
+    // Not authenticated via Supabase → this legacy shell should never show profile selection
+    try{ if(window.top) window.top.location.href='/login'; else window.location.href='/login'; }catch(_){ window.location.href='/login'; }
+    return;
   }
   // Confirm dialog OK button — must be bound after DOM is ready
   const confirmBtn = document.getElementById('confirm-ok-btn');
