@@ -374,14 +374,15 @@ function renderDashboard(){
   else {
   activeTodayTasks.slice(0,10).forEach(t=>{
     const ws=d.tasks.work.find(x=>x.id===t.id)?'Práce':'Osobní';
+    const wsKey=d.tasks.work.find(x=>x.id===t.id)?'work':'personal';
     const div=document.createElement('div');div.className='today-task-item p-'+t.priority+'-t';
-    div.innerHTML=`<div class="tti-check ${t.status==='completed'?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><button class="tact edit" onclick="openTaskModal('${d.tasks.work.find(x=>x.id===t.id)?'work':'personal'}',${t.id})" style="opacity:.5">✎</button>`;
+    div.innerHTML=`<div class="tti-check ${t.status==='completed'?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><div class="tti-actions"><button class="tact edit" onclick="openTaskModal('${wsKey}',${t.id});event.stopPropagation()">✎</button><button class="tact del" onclick="deleteTask('${wsKey}',${t.id});event.stopPropagation()">✕</button></div>`;
     ttl.appendChild(div);
   });
   activeActs.slice(0,10).forEach(a=>{
     const key=today+'_'+a.id;
     const div=document.createElement('div');div.className='today-task-item p-low-t';
-    div.innerHTML=`<div class="tti-check ${d.activityLog[key]?'done':''}" onclick="toggleActivityDone('${key}')"></div><div style="flex:1;min-width:0"><div class="tti-title">${a.icon} ${a.name}${a.time?` <span style="color:var(--text3);font-weight:600;font-family:'Fira Code',monospace;font-size:10px">(${a.time})</span>`:''}</div><div class="tti-meta"><span class="tti-recur">${a.recur&&a.recur!=='none'?'🔁 '+(a.recur==='daily'?'Denně':a.recur==='weekdays'?'Pracovní dny':a.recur==='weekly'?'Týdně':'Měsíčně'):'Aktivita'}</span></div></div>`;
+    div.innerHTML=`<div class="tti-check ${d.activityLog[key]?'done':''}" onclick="toggleActivityDone('${key}', event)"></div><div style="flex:1;min-width:0"><div class="tti-title">${a.icon} ${a.name}${a.time?` <span style="color:var(--text3);font-weight:600;font-family:'Fira Code',monospace;font-size:10px">(${a.time})</span>`:''}</div><div class="tti-meta"><span class="tti-recur">${a.recur&&a.recur!=='none'?'🔁 '+(a.recur==='daily'?'Denně':a.recur==='weekdays'?'Pracovní dny':a.recur==='weekly'?'Týdně':'Měsíčně'):'Aktivita'}</span></div></div><div class="tti-actions"><button class="tact edit" onclick="openActivityModal(${a.id});event.stopPropagation()">✎</button><button class="tact del" onclick="deleteActivityById(${a.id});event.stopPropagation()">✕</button></div>`;
     ttl.appendChild(div);
   });
   }
@@ -528,6 +529,8 @@ function openActivityModal(editId){
   SPORTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.icon+' '+s.name;sel.appendChild(o)});
   document.getElementById('activity-modal-title').textContent=editId?'Upravit aktivitu':'Nová aktivita';
   document.getElementById('am-save-btn').textContent=editId?'Uložit změny':'Přidat aktivitu';
+  const delBtn=document.getElementById('am-del-btn');
+  if(delBtn) delBtn.style.display=editId!=null?'inline-flex':'none';
   document.getElementById('am-date').value=todayStr();
   document.getElementById('am-time').value='';
   if(editId!=null){
@@ -563,6 +566,20 @@ function saveActivity(){
   saveState();closeActivityModal();
   if(currentPage==='weekly')renderWeeklyGrid();
   if(currentPage==='dashboard')renderDashboard();
+}
+
+function deleteActivity(){
+  const d=getPD();if(!d)return;
+  if(activityModalEditId==null) return;
+  const id=activityModalEditId;
+  showConfirm('Smazat aktivitu','Opravdu chcete smazat tuto aktivitu? Tuto akci nelze vrátit zpět.',()=>{
+    d.activities = (d.activities||[]).filter(a=>a.id!==id);
+    // remove completion flags for this activity
+    Object.keys(d.activityLog||{}).forEach(k=>{ if(k.endsWith('_'+id)) delete d.activityLog[k]; });
+    saveState();closeActivityModal();
+    if(currentPage==='weekly')renderWeeklyGrid();
+    if(currentPage==='dashboard')renderDashboard();
+  });
 }
 function closeTaskModal(){document.getElementById('task-modal-ov').classList.remove('open')}
 function closeTaskModalOut(e){if(e.target===document.getElementById('task-modal-ov'))closeTaskModal()}
@@ -690,7 +707,7 @@ function renderWeeklyGrid(){
       const isDone=d.activityLog[key]||false;
       const time=a.time?`<span class="wk-act-time">${a.time}</span>`:'';
       const recur=a.recur&&a.recur!=='none'?'<span class="wk-act-recur">🔁</span>':'';
-      tHTML+=`<div class="wk-activity" data-key="${key}"><span class="wk-act-icon">${a.icon}</span><span class="wk-act-name">${a.name}</span>${time}${recur}<div class="wk-act-toggle ${isDone?'done':''}" onclick="toggleActivityDone('${key}')"></div></div>`;
+      tHTML+=`<div class="wk-activity" data-key="${key}" onclick="openActivityModal(${a.id})"><span class="wk-act-icon">${a.icon}</span><span class="wk-act-name">${a.name}</span>${time}${recur}<div class="wk-act-toggle ${isDone?'done':''}" onclick="toggleActivityDone('${key}', event)"></div></div>`;
     });
     if(!tHTML)tHTML='<div class="wk-empty">—</div>';
     col.innerHTML=`${statsHTML}<div class="wk-col-head"><div class="wk-dayname">${DAYS_S[i]}</div><div class="wk-datenum">${pad(dt.getDate())}</div><div class="wk-mon">${MONTHS_S[dt.getMonth()]}</div></div><div class="wk-col-body">${tHTML}</div>`;
@@ -698,10 +715,21 @@ function renderWeeklyGrid(){
     c.appendChild(col);
   }
 }
-function toggleActivityDone(key){
+function toggleActivityDone(key,e){
+  if(e&&e.stopPropagation)e.stopPropagation();
   const d=getPD();if(!d)return;
   d.activityLog[key]=!d.activityLog[key];saveState();
   if(currentPage==='weekly')renderWeeklyGrid();
+}
+
+function deleteActivityById(id){
+  const d=getPD();if(!d)return;
+  showConfirm('Smazat aktivitu','Trvale smazat tuto aktivitu?',()=>{
+    d.activities = (d.activities||[]).filter(a=>a.id!==id);
+    Object.keys(d.activityLog||{}).forEach(k=>{ if(k.endsWith('_'+id)) delete d.activityLog[k]; });
+    saveState();
+    renderAll();
+  });
 }
 
 // ═══════ SPORT TRACKER ═══════

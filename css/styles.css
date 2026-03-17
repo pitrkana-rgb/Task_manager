@@ -109,8 +109,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
 .sb-uname{font-size:12px;font-weight:600;color:var(--text)}
 .sb-urole{font-size:10px;color:var(--text3)}
-.sb-signout{margin-left:auto;font-size:11px;color:var(--text3);cursor:pointer;transition:color .15s}
-.sb-signout:hover{color:var(--red)}
+.sb-signout{margin-left:auto;color:var(--text3);cursor:pointer;transition:color .15s,background .15s,transform .15s;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px}
+.sb-signout svg{width:18px;height:18px}
+.sb-signout:hover{color:var(--red);background:var(--red-soft);transform:translateY(-1px)}
+.sb-signout:active{transform:translateY(0)}
 
 /* ── MAIN ── */
 #app{display:none;flex:1;flex-direction:column;overflow:hidden;min-width:0}
@@ -185,6 +187,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .btn-cancel:hover{border-color:var(--border2);color:var(--text)}
 .btn-save{background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:9px 22px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(79,70,229,.28)}
 .btn-save:hover{background:#4338CA;box-shadow:0 4px 20px rgba(79,70,229,.4);transform:translateY(-1px)}
+.btn-danger{background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:9px 18px;cursor:pointer;transition:transform var(--dur-2) var(--ease-out),box-shadow var(--dur-2) var(--ease-out),filter var(--dur-2) var(--ease-out);box-shadow:0 2px 14px rgba(239,68,68,.22)}
+.btn-danger:hover{filter:saturate(1.06);transform:translateY(-1px);box-shadow:0 6px 22px rgba(239,68,68,.26)}
+.btn-danger:active{transform:translateY(0);box-shadow:0 2px 14px rgba(239,68,68,.22)}
 
 /* ── DASHBOARD ── */
 .dash-greeting{background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);border-radius:var(--r);padding:22px 26px;color:#fff;position:relative;overflow:hidden;min-height:72px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
@@ -264,6 +269,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .today-task-item.p-low-t::before{background:var(--green)}
 .today-task-item:hover{border-color:rgba(79,70,229,.18);box-shadow:var(--elev-1);transform:translateY(-1px)}
 .today-task-item:active{transform:translateY(0)}
+.today-task-item .tti-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.today-task-item:hover .tti-actions{opacity:1}
 .tti-check{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;margin-top:1px;display:flex;align-items:center;justify-content:center}
 .tti-check.done{background:var(--green);border-color:var(--green)}
 .tti-check.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}

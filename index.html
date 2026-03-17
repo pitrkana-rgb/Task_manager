@@ -67,7 +67,14 @@
     <div class="sb-profile-btn" onclick="goPage('settings')">
       <div class="sb-av" id="sb-avatar" style="background:#4F46E5">PK</div>
       <div><div class="sb-uname" id="sb-uname">Uživatel</div><div class="sb-urole">FlowTask Pro</div></div>
-      <div class="sb-signout" title="Odhlásit" onclick="signOut(event)">⏏</div>
+      <div class="sb-signout" title="Odhlásit" onclick="signOut(event)" aria-label="Odhlásit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10 17l5-5-5-5"></path>
+          <path d="M15 12H3"></path>
+          <path d="M21 12a9 9 0 0 0-9-9"></path>
+          <path d="M12 21a9 9 0 0 0 9-9"></path>
+        </svg>
+      </div>
     </div>
   </div>
 </div>
@@ -498,7 +505,11 @@
         <div class="recur-chip" data-v="monthly" onclick="selActRecur(this)">Měsíčně</div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn-cancel" onclick="closeActivityModal()">Zrušit</button><button class="btn-save" id="am-save-btn" onclick="saveActivity()">Přidat aktivitu</button></div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="am-del-btn" onclick="deleteActivity()" style="display:none">Smazat</button>
+      <button class="btn-cancel" onclick="closeActivityModal()">Zrušit</button>
+      <button class="btn-save" id="am-save-btn" onclick="saveActivity()">Přidat aktivitu</button>
+    </div>
   </div>
 </div>
 
