@@ -12,15 +12,11 @@ const MONTHS_S=['Led','Úno','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Ř
 const DAYS_S=['Po','Út','St','Čt','Pá'];
 const DAYS_FULL=['Pondělí','Úterý','Středa','Čtvrtek','Pátek'];
 const SPORTS=[
-  {id:'running',name:'Běh',icon:'🏃'},
-  {id:'cycling',name:'Cyklistika',icon:'🚴'},
-  {id:'swimming',name:'Plavání',icon:'🏊'},
   {id:'gym',name:'Posilovna',icon:'💪'},
+  {id:'home',name:'Home workout',icon:'🏠'},
+  {id:'running',name:'Běh',icon:'🏃'},
+  {id:'cycling',name:'Kolo',icon:'🚴'},
   {id:'yoga',name:'Jóga',icon:'🧘'},
-  {id:'walking',name:'Chůze',icon:'🚶'},
-  {id:'football',name:'Fotbal',icon:'⚽'},
-  {id:'tennis',name:'Tenis',icon:'🎾'},
-  {id:'basketball',name:'Basketbal',icon:'🏀'},
   {id:'hiking',name:'Turistika',icon:'🥾'},
 ];
 const PROJ_COLORS=['#4F46E5','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#3B82F6','#06B6D4'];
@@ -220,7 +216,7 @@ function renderBadges(){
   const all=[...d.tasks.work,...d.tasks.personal];
   const active=all.filter(t=>t.status!=='completed').length;
   const todayT=all.filter(t=>isRecurToday(t,todayStr())&&t.status!=='completed').length;
-  document.getElementById('badge-dashboard').textContent=active;
+  document.getElementById('badge-dashboard').textContent=todayT;
   document.getElementById('badge-kanban').textContent=active;
 }
 function renderSidebar(){
@@ -711,7 +707,7 @@ function renderWeeklyGrid(){
     });
     if(!tHTML)tHTML='<div class="wk-empty">—</div>';
     col.innerHTML=`${statsHTML}<div class="wk-col-head"><div class="wk-dayname">${DAYS_S[i]}</div><div class="wk-datenum">${pad(dt.getDate())}</div><div class="wk-mon">${MONTHS_S[dt.getMonth()]}</div></div><div class="wk-col-body">${tHTML}</div>`;
-    const pie=col.querySelector('.wk-ds-svg');if(pie)renderPieIn(pie,pctAll,'var(--accent)');
+    const pie=col.querySelector('.wk-ds-svg');if(pie)renderPieIn(pie,pctAll);
     c.appendChild(col);
   }
 }
@@ -830,7 +826,10 @@ function renderGoalsPage(){
       <div class="gc-head">
         <div class="gc-title">${g.title}</div>
         <span class="gc-type-badge ${typeCls}">${typeLabel}</span>
-        <button class="gc-del" onclick="deleteGoal('${wk}',${gi})">✕</button>
+        <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
+          <button class="gc-del" onclick="openGoalModal('${wk}',${gi})" title="Upravit cíl">✎</button>
+          <button class="gc-del" onclick="deleteGoal('${wk}',${gi})" title="Smazat cíl">✕</button>
+        </div>
       </div>
       <div class="gc-progress-wrap">
         <div class="gc-progress-row">
@@ -883,7 +882,28 @@ function deleteGoal(wk,gi){
 }
 
 // GOAL MODAL
-function openGoalModal(){goalModalType='habit';selGoalType('habit');document.getElementById('gm-title').value='';document.getElementById('gm-target').value='';document.getElementById('gm-unit').value='';document.getElementById('goal-modal-ov').classList.add('open');setTimeout(()=>document.getElementById('gm-title').focus(),80)}
+function openGoalModal(wk,gi){
+  const d=getPD();if(!d)return;
+  const titleEl=document.getElementById('gm-title');
+  const targetEl=document.getElementById('gm-target');
+  const unitEl=document.getElementById('gm-unit');
+  if(wk!=null && gi!=null && d.weeklyGoals[wk] && d.weeklyGoals[wk][gi]){
+    const g=d.weeklyGoals[wk][gi];
+    goalModalType=g.type||'habit';
+    selGoalType(goalModalType);
+    if(titleEl) titleEl.value=g.title||'';
+    if(targetEl) targetEl.value=g.target!=null?String(g.target):'';
+    if(unitEl) unitEl.value=g.unit||'';
+  } else {
+    goalModalType='habit';
+    selGoalType('habit');
+    if(titleEl) titleEl.value='';
+    if(targetEl) targetEl.value='';
+    if(unitEl) unitEl.value='';
+  }
+  document.getElementById('goal-modal-ov').classList.add('open');
+  setTimeout(()=>{ if(titleEl) titleEl.focus(); },80);
+}
 function closeGoalModal(){document.getElementById('goal-modal-ov').classList.remove('open')}
 function closeGoalModalOut(e){if(e.target===document.getElementById('goal-modal-ov'))closeGoalModal()}
 function selGoalType(type){
@@ -898,18 +918,38 @@ function saveGoal(){
   const d=getPD();if(!d)return;
   const wk=weekKey(getGoalWeekMon());
   if(!d.weeklyGoals[wk])d.weeklyGoals[wk]=[];
-  const goal={title,type:goalModalType};
-  if(goalModalType==='habit'){goal.days=[false,false,false,false,false,false,false]}
-  else{goal.target=parseFloat(document.getElementById('gm-target').value)||100;goal.unit=document.getElementById('gm-unit').value.trim();goal.entries=[0,0,0,0,0,0,0]}
-  d.weeklyGoals[wk].push(goal);saveState();closeGoalModal();renderGoalsPage();
+  const target=parseFloat(document.getElementById('gm-target').value)||100;
+  const unit=document.getElementById('gm-unit').value.trim();
+
+  // if title matches existing goal in current week, update it, otherwise add new
+  let goal=d.weeklyGoals[wk].find(g=>g.title===title);
+  if(!goal){
+    goal={title,type:goalModalType};
+    if(goalModalType==='habit'){goal.days=[false,false,false,false,false,false,false]}
+    else{goal.target=target;goal.unit=unit;goal.entries=[0,0,0,0,0,0,0]}
+    d.weeklyGoals[wk].push(goal);
+  } else {
+    goal.type=goalModalType;
+    if(goalModalType==='habit'){
+      if(!goal.days)goal.days=[false,false,false,false,false,false,false];
+    } else {
+      goal.target=target;
+      goal.unit=unit;
+      if(!goal.entries)goal.entries=[0,0,0,0,0,0,0];
+    }
+  }
+  saveState();closeGoalModal();renderGoalsPage();
 }
 
 // ═══════ STATISTICS (Týdenní plnění) ═══════
-function renderPieIn(el,pct,color){
+function renderPieIn(el,pct){
   if(!el)return;
   el.innerHTML='';
   const r=42;const cx=50;const cy=50;const circumference=2*Math.PI*r;
   const dashLen=(Math.min(100,Math.max(0,pct))/100)*circumference;
+  const p=Math.min(100,Math.max(0,pct));
+  const h=Math.round((p/100)*120); // 0=red,120=green
+  const dynamicColor=`hsl(${h} 70% 50%)`;
   const bg=document.createElementNS('http://www.w3.org/2000/svg','circle');
   bg.setAttribute('cx',cx);bg.setAttribute('cy',cy);bg.setAttribute('r',r);
   bg.setAttribute('fill','none');bg.setAttribute('stroke','var(--surface3)');bg.setAttribute('stroke-width',8);
@@ -917,7 +957,7 @@ function renderPieIn(el,pct,color){
   if(pct>0){
     const arc=document.createElementNS('http://www.w3.org/2000/svg','circle');
     arc.setAttribute('cx',cx);arc.setAttribute('cy',cy);arc.setAttribute('r',r);
-    arc.setAttribute('fill','none');arc.setAttribute('stroke',color||'var(--green)');arc.setAttribute('stroke-width',8);
+    arc.setAttribute('fill','none');arc.setAttribute('stroke',dynamicColor);arc.setAttribute('stroke-width',8);
     arc.setAttribute('stroke-dasharray',dashLen+' '+circumference);arc.setAttribute('stroke-linecap','round');
     arc.setAttribute('transform','rotate(-90 '+cx+' '+cy+')');
     el.appendChild(arc);
@@ -969,7 +1009,7 @@ function renderStats(){
   setTxt('sum-t-perfect',tPerfect);
   setTxt('sum-t-pct',tPct+'%');
   setTxt('sum-t-sub',tCreated?`${tCompleted} / ${tCreated}`:'—');
-  const tPie=document.getElementById('sum-t-pie');if(tPie)renderPieIn(tPie,tPct,'var(--accent)');
+  const tPie=document.getElementById('sum-t-pie');if(tPie)renderPieIn(tPie,tPct);
 
   // AKTIVITY
   const aCreated=d.activities.length;
@@ -981,7 +1021,7 @@ function renderStats(){
   setTxt('sum-a-perfect',aPerfect);
   setTxt('sum-a-pct',aPct+'%');
   setTxt('sum-a-sub',aCreated?`${aCompleted} / ${aCreated}`:'—');
-  const aPie=document.getElementById('sum-a-pie');if(aPie)renderPieIn(aPie,aPct,'var(--accent)');
+  const aPie=document.getElementById('sum-a-pie');if(aPie)renderPieIn(aPie,aPct);
 
   // VÝZVY (týdny)
   let gCreated=0,gCompleted=0,gPerfect=0;
@@ -1004,7 +1044,7 @@ function renderStats(){
   setTxt('sum-g-perfect',gPerfect);
   setTxt('sum-g-pct',gPct+'%');
   setTxt('sum-g-sub',gCreated?`${gCompleted} / ${gCreated}`:'—');
-  const gPie=document.getElementById('sum-g-pie');if(gPie)renderPieIn(gPie,gPct,'var(--accent)');
+  const gPie=document.getElementById('sum-g-pie');if(gPie)renderPieIn(gPie,gPct);
 
   const c1=document.getElementById('sum-daily-chart');if(c1)drawDailyTasksChart(c1,all);
   const c2=document.getElementById('sum-acts-chart');if(c2)drawDailyActivitiesChart(c2,d);
@@ -1082,7 +1122,7 @@ function renderEvalWeekGrid(grid,d,all){
     const cls=pct>=75?'strong':pct>=45?'avg':'weak';
     const card=document.createElement('div');card.className='ev-week-card '+cls;
     card.innerHTML=`<div class="ev-week-top"><div><div class="ev-week-range">${fshort(mon)} – ${fshort(fri)}</div></div><div class="ev-week-pct">${pct}%</div></div><div class="ev-week-mid"><div class="ev-week-lines"><div class="ev-week-line">Tasks: ${tDn}/${tPl}</div><div class="ev-week-line">Activities: ${aDn}/${aPl}</div><div class="ev-week-line">Challenges: ${g.completed}/${g.total}</div></div><div class="ev-week-pie"><svg viewBox="0 0 100 100"></svg><span>${pct}%</span></div></div>`;
-    const pie=card.querySelector('svg');if(pie)renderPieIn(pie,pct,'var(--accent)');
+    const pie=card.querySelector('svg');if(pie)renderPieIn(pie,pct);
     grid.appendChild(card);
   });
 }
