@@ -27,15 +27,7 @@
     <div class="ps-divider"><span>nebo vytvořte nový profil</span></div>
     <div class="ps-new">
       <input class="ps-input" id="ps-name" placeholder="Vaše jméno" maxlength="32"/>
-      <div class="ps-colors">
-        <span class="ps-color-label">Barva:</span>
-        <div class="ps-clr sel" style="background:#4F46E5" data-c="#4F46E5" onclick="selColor(this)"></div>
-        <div class="ps-clr" style="background:#10B981" data-c="#10B981" onclick="selColor(this)"></div>
-        <div class="ps-clr" style="background:#F59E0B" data-c="#F59E0B" onclick="selColor(this)"></div>
-        <div class="ps-clr" style="background:#EF4444" data-c="#EF4444" onclick="selColor(this)"></div>
-        <div class="ps-clr" style="background:#8B5CF6" data-c="#8B5CF6" onclick="selColor(this)"></div>
-        <div class="ps-clr" style="background:#EC4899" data-c="#EC4899" onclick="selColor(this)"></div>
-      </div>
+      <input class="ps-input" id="ps-email" placeholder="E-mail (volitelně)" maxlength="64"/>
       <button class="ps-btn" onclick="createProfile()">Vytvořit profil a vstoupit</button>
     </div>
   </div>
@@ -303,16 +295,18 @@
     <div class="scroll-area">
       <div class="page-title">Nastavení</div>
       <div class="settings-grid">
-        <div class="settings-section">
-          <div class="ss-title">Profily</div>
-          <div class="profile-list" id="settings-profile-list"></div>
-        </div>
-        <div class="settings-section">
-          <div class="ss-title">Správa dat</div>
-          <button class="settings-btn" onclick="exportData()">📤 Exportovat data (JSON)</button>
-          <button class="settings-btn" onclick="document.getElementById('import-file').click()">📥 Importovat data (JSON)</button>
-          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-          <button class="settings-btn danger" onclick="confirmReset()">🗑️ Smazat všechna data</button>
+        <div class="settings-section" style="grid-column:1/-1">
+          <div class="ss-title">Profil</div>
+          <div class="profile-card" id="settings-profile-card">
+            <div class="pc-left">
+              <div class="pc-av" id="pc-av">P</div>
+              <div class="pc-meta">
+                <div class="pc-name" id="pc-name">—</div>
+                <div class="pc-email" id="pc-email">—</div>
+              </div>
+            </div>
+            <button class="pc-logout" onclick="signOut(event)">Odhlásit se</button>
+          </div>
         </div>
       </div>
     </div>

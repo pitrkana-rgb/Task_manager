@@ -103,8 +103,7 @@ function getActivitiesForDate(d,dateStr){
 }
 
 // ═══════ PROFILE SCREEN ═══════
-let selectedColor='#4F46E5';
-function selColor(el){document.querySelectorAll('.ps-clr').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');selectedColor=el.dataset.c}
+const DEFAULT_PROFILE_COLOR = '#4F46E5';
 function renderProfileScreen(){
   const ids=Object.keys(state.profiles);
   const list=document.getElementById('ps-profiles-list');list.innerHTML='';
@@ -119,9 +118,11 @@ function renderProfileScreen(){
 }
 function createProfile(){
   const name=document.getElementById('ps-name').value.trim();if(!name)return;
+  const emailEl=document.getElementById('ps-email');
+  const email=(emailEl&&emailEl.value?emailEl.value.trim():'')||'';
   const pid='p_'+Date.now();
   const initials=name.split(' ').map(w=>w[0].toUpperCase()).join('').slice(0,2);
-  state.profiles[pid]={id:pid,name,initials,color:selectedColor};
+  state.profiles[pid]={id:pid,name,email,initials,color:DEFAULT_PROFILE_COLOR};
   ensureProfileData(pid);seedData(pid);saveState();enterApp(pid);
 }
 function enterApp(pid){
@@ -1177,12 +1178,19 @@ function toggleProjTask(pid,si,ii,e){const d=getPD();if(!d)return;d.projects[pid
 
 // ═══════ SETTINGS ═══════
 function renderSettingsPage(){
-  const list=document.getElementById('settings-profile-list');list.innerHTML='';
-  Object.values(state.profiles).forEach(p=>{
-    const item=document.createElement('div');item.className='profile-item'+(p.id===activeProfileId?' current':'');
-    item.innerHTML=`<div class="pi-av" style="background:${p.color}">${p.initials}</div><div class="pi-name">${p.name}</div>${p.id!==activeProfileId?`<span class="pi-switch" onclick="enterApp('${p.id}')">Přepnout</span>`:''}<button class="pi-del" onclick="deleteProfile('${p.id}')">✕</button>`;
-    list.appendChild(item);
-  });
+  const p = getProfile();
+  const av = document.getElementById('pc-av');
+  const nm = document.getElementById('pc-name');
+  const em = document.getElementById('pc-email');
+  if (!p) {
+    if (av) av.textContent = '?';
+    if (nm) nm.textContent = '—';
+    if (em) em.textContent = '—';
+    return;
+  }
+  if (av) av.textContent = (p.initials || (p.name || '?').slice(0, 1)).toUpperCase();
+  if (nm) nm.textContent = p.name || '—';
+  if (em) em.textContent = p.email || '—';
 }
 function deleteProfile(pid){if(Object.keys(state.profiles).length<=1&&pid===activeProfileId){alert('Nelze smazat jediný profil.');return}showConfirm('Smazat profil','Trvale smazat tento profil a všechna jeho data?',()=>{delete state.profiles[pid];if(activeProfileId===pid){activeProfileId=null;state.activeProfile=null;saveState();signOut({stopPropagation:()=>{}})}else{saveState();renderSettingsPage()}})}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flowtask_export_'+new Date().toISOString().slice(0,10)+'.json';a.click()}
@@ -1233,7 +1241,23 @@ function seedData(pid){
 // ═══════════════════════════════════════════════════════════════════════════════
 function boot() {
   loadState();
-  if (activeProfileId && state.profiles[activeProfileId]) {
+  const su = (typeof window !== 'undefined' && window.__SUPA_USER) ? window.__SUPA_USER : null;
+  if (su && su.id) {
+    if (!state.profiles) state.profiles = {};
+    const pid = 'u_' + su.id;
+    if (!state.profiles[pid]) {
+      const nm = (su.name || (su.email ? su.email.split('@')[0] : '') || 'Uživatel').trim();
+      const initials = nm.split(' ').map(w => (w[0] || '').toUpperCase()).join('').slice(0, 2) || 'U';
+      state.profiles[pid] = { id: pid, name: nm, email: su.email || '', initials, color: '#4F46E5' };
+      ensureProfileData(pid);
+    }
+    activeProfileId = pid;
+    state.activeProfile = pid;
+    saveState();
+    const ps = document.getElementById('profile-screen'); if (ps) ps.style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    initApp();
+  } else if (activeProfileId && state.profiles[activeProfileId]) {
     document.getElementById('profile-screen').style.display = 'none';
     document.getElementById('app').classList.add('show');
     initApp();
