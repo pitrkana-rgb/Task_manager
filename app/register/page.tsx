@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,12 +18,14 @@ export default function RegisterPage() {
     setError(null)
     setLoading(true)
     try {
+      const supabase = getSupabase()
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name
+            name,
+            phone
           }
         }
       })
@@ -52,6 +55,16 @@ export default function RegisterPage() {
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
               placeholder="Your name"
               required
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700">Phone (optional)</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-100"
+              placeholder="+420 777 123 456"
             />
           </div>
 

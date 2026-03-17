@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -11,6 +11,7 @@ export default function LogoutPage() {
     let alive = true
     ;(async () => {
       try {
+        const supabase = getSupabase()
         await supabase.auth.signOut()
       } finally {
         if (!alive) return

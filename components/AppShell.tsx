@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/context/AuthContext'
 
 export default function AppShell({ title, children }: { title: string; children: React.ReactNode }) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 type Mode = 'login' | 'register'
 
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,6 +19,7 @@ export default function LoginPage() {
   useEffect(() => {
     let alive = true
     ;(async () => {
+      const supabase = getSupabase()
       const { data } = await supabase.auth.getUser()
       if (!alive) return
       if (data.user) router.push('/dashboard')
@@ -43,16 +45,19 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
     try {
+      const supabase = getSupabase()
       if (isRegister) {
         const { data, error } = await supabase.auth.signUp({
           email,
-          password
+          password,
+          options: {
+            data: {
+              name,
+              phone
+            }
+          }
         })
         if (error) throw error
-        if (data.user?.id) {
-          const { error: profileErr } = await supabase.from('profiles').update({ name }).eq('id', data.user.id)
-          if (profileErr) throw profileErr
-        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -123,16 +128,28 @@ export default function LoginPage() {
 
             <form onSubmit={onSubmit} className="space-y-4">
               {isRegister ? (
-                <div>
-                  <label className="text-sm font-semibold text-slate-700">Jméno</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
-                    placeholder="Vaše jméno"
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700">Jméno</label>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                      placeholder="Vaše jméno"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700">Telefon (volitelně)</label>
+                    <input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                      placeholder="+420 777 123 456"
+                    />
+                  </div>
+                </>
               ) : null}
 
               <div>

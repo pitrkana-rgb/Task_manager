@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 type AuthContextValue = {
   user: User | null
@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    const supabase = getSupabase()
 
     supabase.auth
       .getSession()

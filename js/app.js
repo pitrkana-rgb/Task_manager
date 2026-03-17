@@ -120,9 +120,11 @@ function createProfile(){
   const name=document.getElementById('ps-name').value.trim();if(!name)return;
   const emailEl=document.getElementById('ps-email');
   const email=(emailEl&&emailEl.value?emailEl.value.trim():'')||'';
+  const phoneEl=document.getElementById('ps-phone');
+  const phone=(phoneEl&&phoneEl.value?phoneEl.value.trim():'')||'';
   const pid='p_'+Date.now();
   const initials=name.split(' ').map(w=>w[0].toUpperCase()).join('').slice(0,2);
-  state.profiles[pid]={id:pid,name,email,initials,color:DEFAULT_PROFILE_COLOR};
+  state.profiles[pid]={id:pid,name,email,phone,initials,color:DEFAULT_PROFILE_COLOR};
   ensureProfileData(pid);seedData(pid);saveState();enterApp(pid);
 }
 function enterApp(pid){
@@ -185,7 +187,11 @@ function updateGreeting(){
   const dn=['Ne','Po','Út','St','Čt','Pá','So'];
   let greet='Dobré ráno';if(h>=12&&h<17)greet='Dobré odpoledne';else if(h>=17)greet='Dobrý večer';
   const voc=czVocative(p.name)||p.name;
-  const dgName=document.getElementById('dg-name');if(dgName)dgName.textContent=greet+', '+voc+'!';
+  const dgName=document.getElementById('dg-name');
+  if(dgName){
+    const nm=(voc||'').trim();
+    dgName.textContent = nm ? (greet+' '+nm) : (greet+'!');
+  }
   const dgSub=document.getElementById('dg-sub');if(dgSub)dgSub.textContent='Zde je váš dnešní přehled.';
   const dgDate=document.getElementById('dg-date');if(dgDate)dgDate.textContent=dn[new Date().getDay()]+', '+new Date().getDate()+' '+MONTHS_S[new Date().getMonth()]+' '+new Date().getFullYear();
   const dgCredit=document.getElementById('dg-credit');if(dgCredit)dgCredit.textContent='Created by PK-digital';
@@ -1136,7 +1142,7 @@ function drawDailyTasksChart(canvas,all){
 
   const legend=document.getElementById('sum-daily-legend');
   if(legend){
-    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno (plán) &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno úkolů &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno úkolů &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Plnění (%)`;
   }
 }
 
@@ -1236,7 +1242,7 @@ function drawDailyActivitiesChart(canvas,d){
 
   const legend=document.getElementById('sum-acts-legend');
   if(legend){
-    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno (plán) &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno aktivit &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno aktivit &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Plnění (%)`;
   }
 }
 
@@ -1314,7 +1320,7 @@ function drawWeeklyChallengesChart(canvas,d){
 
   const legend=document.getElementById('sum-goals-legend');
   if(legend){
-    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Míra plnění (%)`;
+    legend.innerHTML=`<span style="color:rgba(79,70,229,.9);font-weight:800">■</span> Vytvořeno výzev &nbsp; <span style="color:rgba(16,185,129,.9);font-weight:800">■</span> Splněno výzev &nbsp; <span style="color:rgba(245,158,11,.95);font-weight:800">●</span> Plnění (%)`;
   }
 }
 function renderHeatmap(d){
@@ -1441,15 +1447,18 @@ function renderSettingsPage(){
   const av = document.getElementById('pc-av');
   const nm = document.getElementById('pc-name');
   const em = document.getElementById('pc-email');
+  const ph = document.getElementById('pc-phone');
   if (!p) {
     if (av) av.textContent = '?';
     if (nm) nm.textContent = '—';
     if (em) em.textContent = '—';
+    if (ph) ph.textContent = '—';
     return;
   }
   if (av) av.textContent = (p.initials || (p.name || '?').slice(0, 1)).toUpperCase();
   if (nm) nm.textContent = p.name || '—';
   if (em) em.textContent = p.email || '—';
+  if (ph) ph.textContent = p.phone || '—';
 }
 function deleteProfile(pid){if(Object.keys(state.profiles).length<=1&&pid===activeProfileId){alert('Nelze smazat jediný profil.');return}showConfirm('Smazat profil','Trvale smazat tento profil a všechna jeho data?',()=>{delete state.profiles[pid];if(activeProfileId===pid){activeProfileId=null;state.activeProfile=null;saveState();signOut({stopPropagation:()=>{}})}else{saveState();renderSettingsPage()}})}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flowtask_export_'+new Date().toISOString().slice(0,10)+'.json';a.click()}
@@ -1505,9 +1514,9 @@ function boot() {
     if (!state.profiles) state.profiles = {};
     const pid = 'u_' + su.id;
     if (!state.profiles[pid]) {
-      const nm = (su.name || (su.email ? su.email.split('@')[0] : '') || 'Uživatel').trim();
+      const nm = (su.name || 'Uživatel').trim();
       const initials = nm.split(' ').map(w => (w[0] || '').toUpperCase()).join('').slice(0, 2) || 'U';
-      state.profiles[pid] = { id: pid, name: nm, email: su.email || '', initials, color: '#4F46E5' };
+      state.profiles[pid] = { id: pid, name: nm, email: su.email || '', phone: '', initials, color: '#4F46E5' };
       ensureProfileData(pid);
     }
     activeProfileId = pid;

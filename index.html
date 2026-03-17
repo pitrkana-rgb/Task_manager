@@ -28,6 +28,7 @@
     <div class="ps-new">
       <input class="ps-input" id="ps-name" placeholder="Vaše jméno" maxlength="32"/>
       <input class="ps-input" id="ps-email" placeholder="E-mail (volitelně)" maxlength="64"/>
+      <input class="ps-input" id="ps-phone" placeholder="Telefon (volitelně)" maxlength="32"/>
       <button class="ps-btn" onclick="createProfile()">Vytvořit profil a vstoupit</button>
     </div>
   </div>
@@ -198,8 +199,8 @@
           <div class="wp-wst" onclick="setWPWS('both',this)">Vše</div>
         </div>
         <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-secondary" onclick="openTaskModal('work',null)"><span style="font-size:14px;line-height:0">＋</span>Úkol</button>
-          <button class="btn-secondary" onclick="openActivityModal(null)"><span style="font-size:14px;line-height:0">＋</span>Aktivita</button>
+          <button class="btn-primary" onclick="openTaskModal('work',null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Úkol</button>
+          <button class="btn-primary" onclick="openActivityModal(null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Aktivita</button>
         </div>
       </div>
       <div class="week-grid" id="weekly-grid"></div>
@@ -230,23 +231,14 @@
       <div class="sum-hero">
         <div>
           <div class="page-title stats-page-ttl">Vyhodnocení</div>
-          <div class="page-sub">Celkové plnění úkolů a denní výkon</div>
         </div>
       </div>
 
       <div class="sum-section">
-        <div class="sum-head">
-          <div>
-            <div class="sum-title">Celkové plnění</div>
-            <div class="sum-sub">Souhrn napříč časem</div>
-          </div>
-        </div>
-
         <div class="sum-kpis-3">
-          <div class="sum-bigcard">
+          <div class="sum-bigcard sum-hero-card">
             <div class="sbc-top">
               <div class="sbc-ttl">Úkoly</div>
-              <div class="sbc-sub">Celkové plnění úkolů</div>
             </div>
             <div class="sbc-body">
               <div class="sbc-left">
@@ -275,10 +267,9 @@
             </div>
           </div>
 
-          <div class="sum-bigcard">
+          <div class="sum-bigcard sum-hero-card">
             <div class="sbc-top">
               <div class="sbc-ttl">Aktivity</div>
-              <div class="sbc-sub">Celkové plnění aktivit</div>
             </div>
             <div class="sbc-body">
               <div class="sbc-left">
@@ -307,10 +298,9 @@
             </div>
           </div>
 
-          <div class="sum-bigcard">
+          <div class="sum-bigcard sum-hero-card">
             <div class="sbc-top">
               <div class="sbc-ttl">Výzvy</div>
-              <div class="sbc-sub">Celkové plnění výzev</div>
             </div>
             <div class="sbc-body">
               <div class="sbc-left">
@@ -345,7 +335,6 @@
         <div class="sum-card-head">
           <div>
             <div class="sum-card-title">Vyhodnocení úkolů</div>
-            <div class="sum-card-sub">Vytvořeno (plán) vs. splněno + míra plnění</div>
           </div>
         </div>
         <div class="sum-chart-wrap">
@@ -358,7 +347,6 @@
         <div class="sum-card-head">
           <div>
             <div class="sum-card-title">Vyhodnocení aktivit</div>
-            <div class="sum-card-sub">Vytvořeno (plán) vs. splněno + míra plnění</div>
           </div>
         </div>
         <div class="sum-chart-wrap">
@@ -371,7 +359,6 @@
         <div class="sum-card-head">
           <div>
             <div class="sum-card-title">Vyhodnocení výzev</div>
-            <div class="sum-card-sub">Týdenní agregace: vytvořeno vs. splněno + míra plnění</div>
           </div>
         </div>
         <div class="sum-chart-wrap">
@@ -406,9 +393,44 @@
           <div class="profile-card" id="settings-profile-card">
             <div class="pc-left">
               <div class="pc-av" id="pc-av">P</div>
-              <div class="pc-meta">
-                <div class="pc-name" id="pc-name">—</div>
-                <div class="pc-email" id="pc-email">—</div>
+              <div class="pc-rows">
+                <div class="pc-row">
+                  <div class="pc-ic" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21a8 8 0 0 0-16 0"></path>
+                      <circle cx="12" cy="8" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div class="pc-row-text">
+                    <div class="pc-row-label">Profile name</div>
+                    <div class="pc-row-value" id="pc-name">—</div>
+                  </div>
+                </div>
+
+                <div class="pc-row">
+                  <div class="pc-ic" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 6h16v12H4z"></path>
+                      <path d="m4 7 8 6 8-6"></path>
+                    </svg>
+                  </div>
+                  <div class="pc-row-text">
+                    <div class="pc-row-label">E-mail address</div>
+                    <div class="pc-row-value pc-mono" id="pc-email">—</div>
+                  </div>
+                </div>
+
+                <div class="pc-row">
+                  <div class="pc-ic" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.31 1.7.57 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.09a2 2 0 0 1 2.11-.45c.8.26 1.64.45 2.5.57A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                  </div>
+                  <div class="pc-row-text">
+                    <div class="pc-row-label">Phone</div>
+                    <div class="pc-row-value pc-mono" id="pc-phone">—</div>
+                  </div>
+                </div>
               </div>
             </div>
             <button class="pc-logout" onclick="signOut(event)">Odhlásit se</button>
