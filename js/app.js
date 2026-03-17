@@ -147,11 +147,45 @@ function initApp(){
   renderAll();renderSidebar();goPage('dashboard');
   setInterval(updateGreeting,60000);updateGreeting();
 }
+
+function czVocative(raw){
+  const name=(raw||'').trim();
+  if(!name)return '';
+  const n=name.split(/\s+/)[0];
+  const low=n.toLowerCase();
+  const last=n.slice(-1);
+  const last2=n.slice(-2).toLowerCase();
+  const last3=n.slice(-3).toLowerCase();
+
+  // common female: -a -> -o (Veronika -> Veroniko)
+  if(last==='a'){
+    return n.slice(0,-1)+'o';
+  }
+  // Petr -> Petře, Jan -> Jane, Pavel -> Pavle
+  if(low==='petr') return 'Petře';
+  if(low==='jan') return 'Jane';
+  if(low==='pavel') return 'Pavle';
+  if(low==='tomáš') return 'Tomáši';
+  if(low==='lukáš') return 'Lukáši';
+  if(low==='matěj') return 'Matěji';
+  if(low==='ondřej') return 'Ondřeji';
+
+  // generic masculine-ish heuristics
+  if(last2==='ek') return n.slice(0,-2)+'ku';
+  if(last2==='el') return n.slice(0,-2)+'le';
+  if(last==='k') return n+'u';
+  if(last3==='šek') return n.slice(0,-3)+'šku';
+  if(last==='r') return n+'e';
+
+  return n;
+}
+
 function updateGreeting(){
   const h=new Date().getHours();const p=getProfile();if(!p)return;
   const dn=['Ne','Po','Út','St','Čt','Pá','So'];
   let greet='Dobré ráno';if(h>=12&&h<17)greet='Dobré odpoledne';else if(h>=17)greet='Dobrý večer';
-  const dgName=document.getElementById('dg-name');if(dgName)dgName.textContent=greet+', '+p.name+'!';
+  const voc=czVocative(p.name)||p.name;
+  const dgName=document.getElementById('dg-name');if(dgName)dgName.textContent=greet+', '+voc+'!';
   const dgSub=document.getElementById('dg-sub');if(dgSub)dgSub.textContent='Zde je váš dnešní přehled.';
   const dgDate=document.getElementById('dg-date');if(dgDate)dgDate.textContent=dn[new Date().getDay()]+', '+new Date().getDate()+' '+MONTHS_S[new Date().getMonth()]+' '+new Date().getFullYear();
   const dgCredit=document.getElementById('dg-credit');if(dgCredit)dgCredit.textContent='Created by PK-digital';
