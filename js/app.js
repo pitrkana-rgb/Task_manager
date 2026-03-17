@@ -42,7 +42,9 @@ let taskModalWS='work',taskModalEditId=null,taskModalBullets=[],taskModalRecur='
 let goalModalType='habit';
 let confirmCallback=null;
 let dragState=null;
-let selectedSportIds=[]; /* activities to show in weekly plan grid; empty by default */
+let selectedSportIds=[]; /* legacy sport selector (weekly page removed) */
+let activityModalEditId=null;
+let activityModalRecur='none';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PERSISTENCE — localStorage load/save, profile and profile data access
@@ -54,11 +56,12 @@ function saveState(){state.nextId=nextId;state.activeProfile=activeProfileId;try
 function getProfile(){return activeProfileId&&state.profiles[activeProfileId]?state.profiles[activeProfileId]:null}
 function getPD(){const p=getProfile();return p?p.data:null}
 function ensureProfileData(pid){
-  if(!state.profiles[pid].data)state.profiles[pid].data={tasks:{work:[],personal:[]},projects:{},sportLog:{},completedDates:[],weeklyGoals:{}};
+  if(!state.profiles[pid].data)state.profiles[pid].data={tasks:{work:[],personal:[]},projects:{},sportLog:{},completedDates:[],weeklyGoals:{},activities:[],activityLog:{}};
   const d=state.profiles[pid].data;
   if(!d.tasks)d.tasks={work:[],personal:[]};
   if(!d.projects)d.projects={};if(!d.sportLog)d.sportLog={};
   if(!d.completedDates)d.completedDates=[];if(!d.weeklyGoals)d.weeklyGoals={};
+  if(!d.activities)d.activities=[];if(!d.activityLog)d.activityLog={};
 }
 
 // ═══════ DATE UTILS ═══════
@@ -77,6 +80,26 @@ function isRecurToday(t,dateStr){
   if(t.recur==='weekly'){if(!t.dueDate)return false;return new Date(t.dueDate+'T00:00:00').getDay()===dow}
   if(t.recur==='monthly'){if(!t.dueDate)return false;return new Date(t.dueDate+'T00:00:00').getDate()===d.getDate()}
   return false;
+}
+
+function getActivitiesForDate(d,dateStr){
+  if(!d||!d.activities)return [];
+  const dt=new Date(dateStr+'T00:00:00');
+  const dow=dt.getDay();
+  return d.activities.filter(a=>{
+    const start=a.date||null;
+    if(start && dateStr<start)return false;
+    const r=a.recur||'none';
+    if(r==='none')return a.date===dateStr;
+    if(r==='daily')return true;
+    if(r==='weekdays')return dow>=1&&dow<=5;
+    if(r==='weekly'){if(!a.date)return false;return new Date(a.date+'T00:00:00').getDay()===dow}
+    if(r==='monthly'){if(!a.date)return false;return new Date(a.date+'T00:00:00').getDate()===dt.getDate()}
+    return false;
+  }).map(a=>{
+    const s=SPORTS.find(x=>x.id===a.sportId);
+    return { ...a, name:s?s.name:'Aktivita', icon:s?s.icon:'🏷️' };
+  }).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
 }
 
 // ═══════ PROFILE SCREEN ═══════
@@ -127,7 +150,7 @@ function updateGreeting(){
   const dgName=document.getElementById('dg-name');if(dgName)dgName.textContent=greet+', '+p.name+'!';
   const dgSub=document.getElementById('dg-sub');if(dgSub)dgSub.textContent='Zde je váš dnešní přehled.';
   const dgDate=document.getElementById('dg-date');if(dgDate)dgDate.textContent=dn[new Date().getDay()]+', '+new Date().getDate()+' '+MONTHS_S[new Date().getMonth()]+' '+new Date().getFullYear();
-  const dgCredit=document.getElementById('dg-credit');if(dgCredit)dgCredit.textContent='Vytvořil '+p.name;
+  const dgCredit=document.getElementById('dg-credit');if(dgCredit)dgCredit.textContent='Created by PK-digital';
 }
 
 // ═══════ NAV ═══════
@@ -147,7 +170,7 @@ function goPage(page){
 }
 
 // ═══════ RENDER ALL ═══════
-function renderAll(){renderKanbanBoard('work');renderKanbanBoard('personal');renderDashboard();renderBadges();renderSidebar()}
+function renderAll(){renderKanbanBoard('work');renderKanbanBoard('personal');if(currentKanbanWS==='all')renderKanbanAll();renderDashboard();renderBadges();renderSidebar()}
 function renderBadges(){
   const d=getPD();if(!d)return;
   const all=[...d.tasks.work,...d.tasks.personal];
@@ -173,29 +196,32 @@ function renderSidebar(){
 }
 
 // ═══════ DASHBOARD (Přehled dne) ═══════
-/** Returns weekly goal progress for current week: [{ title, pct }, ...] */
+/** Returns weekly goal progress for current week: [{ title, pct, detail }, ...] */
 function getDashboardWeeklyGoalsProgress(d){
   if(!d||!d.weeklyGoals)return [];
   const wk=weekKey(new Date());
   const goals=d.weeklyGoals[wk];
   if(!goals||!goals.length)return [];
   return goals.map(g=>{
-    let pct=0;
+    let pct=0,detail='';
     if(g.type==='habit'){
       const days=g.days||[false,false,false,false,false,false,false];
-      pct=Math.round((days.filter(Boolean).length/7)*100);
+      const checked=days.filter(Boolean).length;
+      pct=Math.round((checked/7)*100);
+      detail=`${checked} / 7 dní`;
     } else {
       const entries=g.entries||[0,0,0,0,0,0,0];
       const sum=entries.reduce((a,b)=>a+b,0);
       const target=g.target||1;
       pct=Math.min(100,Math.round((sum/target)*100));
+      detail=`${sum} / ${target} ${g.unit||''}`.trim();
     }
-    return { title: g.title, pct };
+    return { title: g.title, pct, detail };
   });
 }
 
 /** Builds one weekly goal row: circular progress (left) + title and "X% complete" (right). */
-function mkWeeklyGoalRow(title,pct){
+function mkWeeklyGoalRow(title,pct,detail){
   const row=document.createElement('div');row.className='dash-wg-row';
   const size=44;const r=18;const cx=size/2;const cy=size/2;
   const circumference=2*Math.PI*r;
@@ -220,7 +246,7 @@ function mkWeeklyGoalRow(title,pct){
   pctText.textContent=pct+'%';
   svg.appendChild(pctText);
   const textWrap=document.createElement('div');textWrap.className='dash-wg-text';
-  textWrap.innerHTML=`<div class="dash-wg-name" title="${title.replace(/"/g,'&quot;')}">${title}</div><div class="dash-wg-complete">${pct}% splněno</div>`;
+  textWrap.innerHTML=`<div class="dash-wg-name" title="${title.replace(/"/g,'&quot;')}">${title}</div><div class="dash-wg-complete">${(detail||'').replace(/\"/g,'&quot;')}</div>`;
   row.appendChild(svg);row.appendChild(textWrap);
   return row;
 }
@@ -283,28 +309,39 @@ function renderDashboard(){
   const inProgressToday=todayTasks.filter(t=>t.status==='inprogress').length;
   const completedToday=todayTasks.filter(t=>t.status==='completed').length;
 
-  document.getElementById('sc-total').textContent=totalToday;
-  document.getElementById('sc-inprogress').textContent=inProgressToday;
-  document.getElementById('sc-done').textContent=completedToday;
-
-  renderDashboardPieChart(completedToday,totalToday);
+  const dpDone=document.getElementById('dp-done');if(dpDone)dpDone.textContent=completedToday;
+  const dpTotal=document.getElementById('dp-total');if(dpTotal)dpTotal.textContent=totalToday;
+  const pct=totalToday?Math.round((completedToday/totalToday)*100):0;
+  const dpPct=document.getElementById('dp-pct');if(dpPct)dpPct.textContent=pct+'%';
+  const dpFill=document.getElementById('dp-fill');if(dpFill){dpFill.style.width=pct+'%';dpFill.style.backgroundColor=pctToHsl(pct)}
 
   const wgList=document.getElementById('dash-wg-list');if(wgList){
     wgList.innerHTML='';
     const goals=getDashboardWeeklyGoalsProgress(d);
     if(!goals.length){const empty=document.createElement('div');empty.className='dash-wg-empty';empty.textContent='Pro tento týden nejsou žádné cíle.';wgList.appendChild(empty)}
-    else goals.forEach(({title,pct})=>wgList.appendChild(mkWeeklyGoalRow(title,pct)));
+    else goals.forEach(({title,pct,detail})=>wgList.appendChild(mkWeeklyGoalRow(title,pct,detail)));
   }
 
   const ttl=document.getElementById('today-tasks-list');if(ttl){ttl.innerHTML='';
   const activeTodayTasks=todayTasks.filter(t=>t.status!=='completed');
-  if(!activeTodayTasks.length){ttl.innerHTML='<div class="empty-state">Žádné dnešní úkoly — skvělá práce! 🎉</div>'}
-  else activeTodayTasks.slice(0,10).forEach(t=>{
+  const todayActs=getActivitiesForDate(d,today);
+  const activeActs=todayActs.filter(a=>!d.activityLog[today+'_'+a.id]);
+  if(!activeTodayTasks.length && !activeActs.length){ttl.innerHTML='<div class="empty-state">Žádné dnešní úkoly — skvělá práce! 🎉</div>'}
+  else {
+  activeTodayTasks.slice(0,10).forEach(t=>{
     const ws=d.tasks.work.find(x=>x.id===t.id)?'Práce':'Osobní';
     const div=document.createElement('div');div.className='today-task-item p-'+t.priority+'-t';
     div.innerHTML=`<div class="tti-check ${t.status==='completed'?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><button class="tact edit" onclick="openTaskModal('${d.tasks.work.find(x=>x.id===t.id)?'work':'personal'}',${t.id})" style="opacity:.5">✎</button>`;
     ttl.appendChild(div);
-  });}
+  });
+  activeActs.slice(0,10).forEach(a=>{
+    const key=today+'_'+a.id;
+    const div=document.createElement('div');div.className='today-task-item p-low-t';
+    div.innerHTML=`<div class="tti-check ${d.activityLog[key]?'done':''}" onclick="toggleActivityDone('${key}')"></div><div style="flex:1;min-width:0"><div class="tti-title">${a.icon} ${a.name}${a.time?` <span style="color:var(--text3);font-weight:600;font-family:'Fira Code',monospace;font-size:10px">(${a.time})</span>`:''}</div><div class="tti-meta"><span class="tti-recur">${a.recur&&a.recur!=='none'?'🔁 '+(a.recur==='daily'?'Denně':a.recur==='weekdays'?'Pracovní dny':a.recur==='weekly'?'Týdně':'Měsíčně'):'Aktivita'}</span></div></div>`;
+    ttl.appendChild(div);
+  });
+  }
+  }
 
   const ul=document.getElementById('upcoming-list');if(ul){ul.innerHTML='';
   const upcoming=all.filter(t=>t.dueDate&&t.dueDate>today&&t.status!=='completed').sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,8);
@@ -316,6 +353,12 @@ function renderDashboard(){
     div.innerHTML=`<span class="up-date">${t.dueDate}</span><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span><span class="up-title">${t.title}</span><span style="font-size:9px;font-family:'Fira Code',monospace;color:${daysLeft<=2?'var(--red)':'var(--text3)'}">za ${daysStr}</span>`;
     ul.appendChild(div);
   });}
+}
+
+function pctToHsl(pct){
+  const p=Math.min(100,Math.max(0,pct));
+  const h=Math.round((p/100)*120); // 0=red → 120=green
+  return `hsl(${h} 75% 45%)`;
 }
 function quickComplete(id){
   const d=getPD();if(!d)return;
@@ -335,6 +378,33 @@ function setKanbanWS(ws,el){
   document.querySelectorAll('#kanban-ws-tabs .ws-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');
   document.getElementById('kanban-work-board').style.display=ws==='work'?'grid':'none';
   document.getElementById('kanban-personal-board').style.display=ws==='personal'?'grid':'none';
+  const allWrap=document.getElementById('kanban-all-wrap');if(allWrap)allWrap.style.display=ws==='all'?'block':'none';
+  if(ws==='all'){renderKanbanAll()}
+}
+
+function renderKanbanAll(){
+  const d=getPD();if(!d)return;
+  const target=document.getElementById('kanban-all-board');if(!target)return;
+  target.innerHTML='';
+  const allTasks=[
+    ...d.tasks.work.map(t=>({ws:'work',t})),
+    ...d.tasks.personal.map(t=>({ws:'personal',t}))
+  ];
+  ['ideas','inprogress','completed'].forEach(col=>{
+    const colEl=document.createElement('div');colEl.className='kol'+(col==='completed'?' completed-kol':'');
+    colEl.ondragover=(e)=>onDragOver(e,dragState?dragState.ws:'work',col);
+    colEl.ondrop=(e)=>onDrop(e,dragState?dragState.ws:'work',col);
+    colEl.ondragleave=(e)=>onDragLeave(e);
+    const name=col==='ideas'?'Nové úkoly':col==='inprogress'?'Rozpracováno':'Splněno';
+    const dot=col==='ideas'?'var(--accent)':col==='inprogress'?'var(--amber)':'var(--green)';
+    const cnt=allTasks.filter(x=>x.t.status===col).length;
+    colEl.innerHTML=`<div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:${dot}"></span>${name}</div><span class="kol-cnt">${cnt}</span></div><div class="kol-body"></div>`;
+    const body=colEl.querySelector('.kol-body');
+    allTasks.filter(x=>x.t.status===col).forEach(({ws,t})=>body.appendChild(mkTaskCard(ws,t)));
+    // drop handler must move across work/personal based on dragged task
+    colEl.ondrop=(e)=>{e.preventDefault();onDrop(e,dragState?dragState.ws:'work',col)};
+    target.appendChild(colEl);
+  });
 }
 function renderKanbanBoard(ws){
   const d=getPD();if(!d)return;
@@ -357,7 +427,7 @@ function mkTaskCard(ws,t){
   const pct=total?Math.round((done/total)*100):0;
   const priLbl=t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká';
   const clHTML=t.bullets?t.bullets.map((b,bi)=>`<div class="cli-item"><input type="checkbox" ${b.done?'checked':''} onchange="toggleBullet('${ws}',${t.id},${bi},event)"><span class="${b.done?'ck':''}">${b.text}</span></div>`).join(''):'';
-  card.innerHTML=`<div class="tc-top"><div class="tc-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tc-actions"><button class="tact edit" onclick="openTaskModal('${ws}',${t.id})">✎</button>${t.status!=='completed'?`<button class="tact done-btn" onclick="completeTask('${ws}',${t.id})">✓</button>`:''}<button class="tact del" onclick="deleteTask('${ws}',${t.id})">✕</button></div></div><div class="tc-meta"><span class="pbadge p-${t.priority}">${priLbl}</span>${t.dueDate?`<span class="tc-date ${overdue?'overdue':''}">${t.dueDate}${overdue?' ⚠':''}</span>`:''} ${t.recur&&t.recur!=='none'?'<span class="tc-recur">🔁</span>':''}</div>${total?`<div class="cl-wrap">${clHTML}<div class="cl-track"><div class="cl-fill" style="width:${pct}%"></div></div></div>`:''}`;
+  card.innerHTML=`<div class="tc-top"><div class="tc-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tc-actions"><button class="tact edit" onclick="openTaskModal('${ws}',${t.id})">✎</button>${t.status!=='completed'?`<button class="tact done-btn" onclick="completeTask('${ws}',${t.id})">✓</button>`:''}<button class="tact del" onclick="deleteTask('${ws}',${t.id})">✕</button></div></div><div class="tc-meta"><span class="pbadge p-${t.priority}">${priLbl}</span>${t.dueDate?`<span class="tc-date ${overdue?'overdue':''}">${t.dueDate}${overdue?' ⚠':''}</span>`:''} ${t.recur&&t.recur!=='none'?'<span class="tc-recur">🔁</span>':''}<span class="tc-ws-badge ${ws==='work'?'work':'personal'}">${ws==='work'?'Práce':'Osobní'}</span></div>${total?`<div class="cl-wrap">${clHTML}<div class="cl-track"><div class="cl-fill" style="width:${pct}%"></div></div></div>`:''}`;
   return card;
 }
 function completeTask(ws,id){const d=getPD();if(!d)return;const t=d.tasks[ws].find(t=>t.id===id);if(t){t.status='completed';logCompletionDate(d);saveState();renderAll()}}
@@ -387,7 +457,6 @@ function openTaskModal(ws,editId){
       document.getElementById('tm-ws').value=d.tasks.work.find(x=>x.id===editId)?'work':'personal';
       document.getElementById('tm-date').value=t.dueDate||'';
       document.getElementById('tm-status').value=t.status;
-      document.getElementById('tm-notes').value=t.notes||'';
       taskModalBullets=(t.bullets||[]).map(b=>({...b}));
       taskModalRecur=t.recur||'none';
     }
@@ -396,17 +465,72 @@ function openTaskModal(ws,editId){
     document.getElementById('tm-save-btn').textContent='Přidat úkol';
     document.getElementById('tm-title').value='';document.getElementById('tm-priority').value='medium';
     document.getElementById('tm-ws').value=ws;document.getElementById('tm-date').value='';
-    document.getElementById('tm-status').value='ideas';document.getElementById('tm-notes').value='';
+    document.getElementById('tm-status').value='ideas';
     taskModalRecur='none';
   }
   renderRecurOpts();renderTaskBullets();
   document.getElementById('task-modal-ov').classList.add('open');
   setTimeout(()=>document.getElementById('tm-title').focus(),80);
 }
+
+// ═══════ ACTIVITY MODAL ═══════
+function openActivityModal(editId){
+  activityModalEditId=editId;activityModalRecur='none';
+  const d=getPD();if(!d)return;
+  if(!d.activities)d.activities=[];
+  if(!d.activityLog)d.activityLog={};
+  const sel=document.getElementById('am-activity');if(!sel)return;
+  sel.innerHTML='';
+  SPORTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.icon+' '+s.name;sel.appendChild(o)});
+  document.getElementById('activity-modal-title').textContent=editId?'Upravit aktivitu':'Nová aktivita';
+  document.getElementById('am-save-btn').textContent=editId?'Uložit změny':'Přidat aktivitu';
+  document.getElementById('am-date').value=todayStr();
+  document.getElementById('am-time').value='';
+  if(editId!=null){
+    const a=d.activities.find(x=>x.id===editId);
+    if(a){
+      sel.value=a.sportId;
+      document.getElementById('am-date').value=a.date||todayStr();
+      document.getElementById('am-time').value=a.time||'';
+      activityModalRecur=a.recur||'none';
+    }
+  }
+  renderActRecurOpts();
+  document.getElementById('activity-modal-ov').classList.add('open');
+}
+function closeActivityModal(){document.getElementById('activity-modal-ov').classList.remove('open')}
+function closeActivityModalOut(e){if(e.target===document.getElementById('activity-modal-ov'))closeActivityModal()}
+function selActRecur(el){document.querySelectorAll('#am-recur-opts .recur-chip').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');activityModalRecur=el.dataset.v}
+function renderActRecurOpts(){document.querySelectorAll('#am-recur-opts .recur-chip').forEach(el=>el.classList.toggle('sel',el.dataset.v===activityModalRecur))}
+function saveActivity(){
+  const d=getPD();if(!d)return;
+  if(!d.activities)d.activities=[];
+  if(!d.activityLog)d.activityLog={};
+  const sportId=document.getElementById('am-activity').value;
+  const date=document.getElementById('am-date').value||todayStr();
+  const time=document.getElementById('am-time').value||'';
+  const recur=activityModalRecur;
+  if(activityModalEditId!=null){
+    const a=d.activities.find(x=>x.id===activityModalEditId);
+    if(a)Object.assign(a,{sportId,date,time,recur});
+  } else {
+    d.activities.push({id:nextId++,sportId,date,time,recur});
+  }
+  saveState();closeActivityModal();
+  if(currentPage==='weekly')renderWeeklyGrid();
+  if(currentPage==='dashboard')renderDashboard();
+}
 function closeTaskModal(){document.getElementById('task-modal-ov').classList.remove('open')}
 function closeTaskModalOut(e){if(e.target===document.getElementById('task-modal-ov'))closeTaskModal()}
-function selRecur(el){document.querySelectorAll('.recur-chip').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');taskModalRecur=el.dataset.v}
-function renderRecurOpts(){document.querySelectorAll('.recur-chip').forEach(el=>el.classList.toggle('sel',el.dataset.v===taskModalRecur))}
+function selRecur(el){
+  const wrap=document.getElementById('tm-recur-opts')||document;
+  wrap.querySelectorAll('.recur-chip').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');taskModalRecur=el.dataset.v;
+}
+function renderRecurOpts(){
+  const wrap=document.getElementById('tm-recur-opts')||document;
+  wrap.querySelectorAll('.recur-chip').forEach(el=>el.classList.toggle('sel',el.dataset.v===taskModalRecur));
+}
 function renderTaskBullets(){
   const list=document.getElementById('tm-bullets');list.innerHTML='';
   taskModalBullets.forEach((b,i)=>{const row=document.createElement('div');row.className='b-item';row.innerHTML=`<span class="b-dot"></span><span class="b-text">${b.text}</span><button class="b-del" onclick="rmBullet(${i})">✕</button>`;list.appendChild(row)});
@@ -420,17 +544,16 @@ function saveTask(){
   const priority=document.getElementById('tm-priority').value;
   const dueDate=document.getElementById('tm-date').value||null;
   const status=document.getElementById('tm-status').value;
-  const notes=document.getElementById('tm-notes').value;
   const recur=taskModalRecur;
   if(taskModalEditId!==null&&taskModalEditId!==undefined){
     let t=d.tasks.work.find(x=>x.id===taskModalEditId)||d.tasks.personal.find(x=>x.id===taskModalEditId);
     if(t){
       const origWS=d.tasks.work.find(x=>x.id===taskModalEditId)?'work':'personal';
       if(origWS!==ws){d.tasks[origWS]=d.tasks[origWS].filter(x=>x.id!==t.id);d.tasks[ws].push(t)}
-      Object.assign(t,{title,priority,dueDate,status,notes,recur,bullets:taskModalBullets.map(b=>({...b}))});
+      Object.assign(t,{title,priority,dueDate,status,recur,bullets:taskModalBullets.map(b=>({...b}))});
     }
   } else {
-    d.tasks[ws].push({id:nextId++,title,priority,dueDate,status,notes,recur,bullets:taskModalBullets.map(b=>({...b})),ws});
+    d.tasks[ws].push({id:nextId++,title,priority,dueDate,status,recur,bullets:taskModalBullets.map(b=>({...b})),ws});
   }
   if(status==='completed')logCompletionDate(d);
   saveState();closeTaskModal();renderAll();
@@ -484,14 +607,31 @@ function renderWeeklyGrid(){
   if(!selWeekMon){c.innerHTML='<div style="color:var(--text3);font-size:12px;font-family:Fira Code,monospace;grid-column:1/-1">← Vyberte týden pomocí výběru výše</div>';return}
   const now=new Date();now.setHours(0,0,0,0);c.innerHTML='';
   const fri=new Date(selWeekMon);fri.setDate(selWeekMon.getDate()+4);
-  document.getElementById('sport-week-label').textContent=fshort(selWeekMon)+' – '+fshort(fri);
   const wsList=currentWPWS==='both'?['work','personal']:[currentWPWS];
-  const visibleSports=SPORTS.filter(s=>selectedSportIds.includes(s.id));
   for(let i=0;i<5;i++){
     const dt=new Date(selWeekMon);dt.setDate(selWeekMon.getDate()+i);
     const isTod=dt.getTime()===now.getTime(),dstr=dsDate(dt);
     const col=document.createElement('div');col.className='wk-col'+(isTod?' today-col':'');
     let tHTML='';
+    // day stats (tasks + activities)
+    const tasksForDay=[];
+    wsList.forEach(ws=>{
+      d.tasks[ws].forEach(t=>{
+        const isDue=t.dueDate===dstr;
+        const isRecur=t.recur&&t.recur!=='none'&&isRecurToday(t,dstr)&&t.dueDate!==dstr;
+        if(isDue||isRecur)tasksForDay.push(t);
+      });
+    });
+    const uniqueTasks=Object.values(tasksForDay.reduce((acc,t)=>{acc[t.id]=t;return acc},{}));
+    const tasksTotal=uniqueTasks.length;
+    const tasksDone=uniqueTasks.filter(t=>t.status==='completed').length;
+    const acts=getActivitiesForDate(d,dstr);
+    const actsTotal=acts.length;
+    const actsDone=acts.filter(a=>d.activityLog[dstr+'_'+a.id]).length;
+    const totalAll=tasksTotal+actsTotal;
+    const doneAll=tasksDone+actsDone;
+    const pctAll=totalAll?Math.round((doneAll/totalAll)*100):0;
+    const statsHTML=`<div class="wk-day-stat"><div class="wk-ds-left"><div class="wk-ds-line">Úkoly: <b>${tasksDone}/${tasksTotal}</b></div><div class="wk-ds-line">Aktivity: <b>${actsDone}/${actsTotal}</b></div></div><div class="wk-ds-pie"><svg class="wk-ds-svg" viewBox="0 0 100 100"></svg><div class="wk-ds-pct">${pctAll}%</div></div></div>`;
     wsList.forEach(ws=>{
       d.tasks[ws].filter(t=>t.dueDate===dstr&&t.status!=='completed').forEach(t=>{
         tHTML+=`<div class="wk-task p-${t.priority}" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="display:flex;align-items:center;gap:5px;padding-left:5px"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${currentWPWS==='both'?`<span style="font-size:9px;font-family:Fira Code,monospace;color:var(--text3)">${ws==='work'?'Práce':'Osobní'}</span>`:''}</div></div>`;
@@ -500,20 +640,24 @@ function renderWeeklyGrid(){
         tHTML+=`<div class="wk-task p-${t.priority}" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="padding-left:5px"><span class="tti-recur">🔁</span></div></div>`;
       });
     });
-    visibleSports.forEach(sport=>{
-      const key=dstr+'_'+sport.id;
-      const isDone=d.sportLog[key]||false;
-      tHTML+=`<div class="wk-sport" data-key="${key}"><span class="wk-sport-icon">${sport.icon}</span><span class="wk-sport-name">${sport.name}</span><div class="wk-sport-toggle ${isDone?'done':''}" onclick="toggleSportInDay('${key}')"></div></div>`;
+    // activities list
+    acts.forEach(a=>{
+      const key=dstr+'_'+a.id;
+      const isDone=d.activityLog[key]||false;
+      const time=a.time?`<span class="wk-act-time">${a.time}</span>`:'';
+      const recur=a.recur&&a.recur!=='none'?'<span class="wk-act-recur">🔁</span>':'';
+      tHTML+=`<div class="wk-activity" data-key="${key}"><span class="wk-act-icon">${a.icon}</span><span class="wk-act-name">${a.name}</span>${time}${recur}<div class="wk-act-toggle ${isDone?'done':''}" onclick="toggleActivityDone('${key}')"></div></div>`;
     });
     if(!tHTML)tHTML='<div class="wk-empty">—</div>';
-    col.innerHTML=`<div class="wk-col-head"><div class="wk-dayname">${DAYS_S[i]}</div><div class="wk-datenum">${pad(dt.getDate())}</div><div class="wk-mon">${MONTHS_S[dt.getMonth()]}</div></div><div class="wk-col-body">${tHTML}</div>`;
+    col.innerHTML=`${statsHTML}<div class="wk-col-head"><div class="wk-dayname">${DAYS_S[i]}</div><div class="wk-datenum">${pad(dt.getDate())}</div><div class="wk-mon">${MONTHS_S[dt.getMonth()]}</div></div><div class="wk-col-body">${tHTML}</div>`;
+    const pie=col.querySelector('.wk-ds-svg');if(pie)renderPieIn(pie,pctAll,'var(--accent)');
     c.appendChild(col);
   }
 }
-function toggleSportInDay(key){
+function toggleActivityDone(key){
   const d=getPD();if(!d)return;
-  d.sportLog[key]=!d.sportLog[key];saveState();
-  if(currentPage==='weekly'){renderWeeklyGrid();renderSportGrid()}
+  d.activityLog[key]=!d.activityLog[key];saveState();
+  if(currentPage==='weekly')renderWeeklyGrid();
 }
 
 // ═══════ SPORT TRACKER ═══════
@@ -590,7 +734,7 @@ function renderGoalsPage(){
       progressDetail=`${sum} / ${target} ${g.unit||''}`;
     }
     const fillColor=pct<33?'var(--red)':pct<66?'var(--amber)':'var(--green)';
-    const typeLabel=g.type==='habit'?'Návyk':'Numerický';
+    const typeLabel=g.type==='habit'?'Návyk':'Výzva';
     const typeCls=g.type==='habit'?'gc-type-habit':'gc-type-numeric';
     // day labels
     const dayLbls=['Po','Út','St','Čt','Pá','So','Ne'];
@@ -622,7 +766,6 @@ function renderGoalsPage(){
           <div class="gc-pct-label" style="color:${fillColor}">${pct}%</div>
         </div>
         <div class="gc-stats-row">
-          <div class="gc-stat"><div class="gc-stat-val">${pct}%</div><div class="gc-stat-lbl">Splnění</div></div>
           <div class="gc-stat"><div class="gc-stat-val" style="font-size:13px">${progressDetail}</div><div class="gc-stat-lbl">Pokrok</div></div>
         </div>
       </div>
@@ -726,46 +869,192 @@ function goalWeekPct(d,wk){
   });
   return { pct:Math.round(sumPct/goals.length), completed, total:goals.length };
 }
+
+let evalMetric='tasks';
+function setEvalMetric(m){
+  evalMetric=m;
+  ['tasks','activities','challenges'].forEach(x=>{
+    const b=document.getElementById('ev-tbtn-'+x);if(b)b.classList.toggle('active',x===m);
+  });
+  renderStats();
+}
+
 function renderStats(){
   const d=getPD();if(!d)return;
+  if(!d.activities)d.activities=[];
+  if(!d.activityLog)d.activityLog={};
+
   const all=[...d.tasks.work,...d.tasks.personal];
   const totalTasks=all.length;
   const completedTasks=all.filter(t=>t.status==='completed').length;
-  const taskPct=totalTasks?Math.round((completedTasks/totalTasks)*100):0;
-  const weekKeys=new Set();
-  all.forEach(t=>{if(t.dueDate){const w=weekKey(new Date(t.dueDate+'T00:00:00'));weekKeys.add(w)}});
-  Object.keys(d.weeklyGoals||{}).forEach(wk=>{if(d.weeklyGoals[wk]&&d.weeklyGoals[wk].length)weekKeys.add(wk)});
-  const weeksPlanned=weekKeys.size;
-  let goalsCompleted=0,goalCount=0;
+  const actsCompleted=Object.entries(d.activityLog).filter(([,v])=>v===true).length;
+  let chCompleted=0,chTotal=0;
   Object.entries(d.weeklyGoals||{}).forEach(([wk,goals])=>{
     if(!goals||!goals.length)return;
     const r=goalWeekPct(d,wk);
-    goalCount+=r.total;goalsCompleted+=r.completed;
+    chCompleted+=r.completed;chTotal+=r.total;
   });
-  const goalPctForCard=goalCount?Math.round((goalsCompleted/goalCount)*100):0;
-  document.getElementById('st-weeks-planned').textContent=weeksPlanned;
-  const tasksPieSvg=document.getElementById('st-tasks-pie-svg');const tasksPieText=document.getElementById('st-tasks-pie-text');const tasksSub=document.getElementById('st-tasks-sub');
-  if(tasksPieSvg){renderPieIn(tasksPieSvg,taskPct,'var(--green)')}
-  if(tasksPieText)tasksPieText.textContent=completedTasks+'/'+totalTasks;
-  if(tasksSub)tasksSub.textContent=taskPct+'%';
-  const goalsPieSvg=document.getElementById('st-goals-pie-svg');const goalsPieText=document.getElementById('st-goals-pie-text');const goalsSub=document.getElementById('st-goals-sub');
-  if(goalsPieSvg){renderPieIn(goalsPieSvg,goalPctForCard,'var(--purple)')}
-  if(goalsPieText)goalsPieText.textContent=goalPctForCard+'%';
-  if(goalsSub)goalsSub.textContent=goalCount?goalsCompleted+'/'+goalCount+' výzev':'—';
-  const listEl=document.getElementById('stats-week-list');if(!listEl)return;
-  listEl.innerHTML='';
+  const overallTotal=totalTasks + d.activities.length + chTotal;
+  const overallDone=completedTasks + actsCompleted + chCompleted;
+  const overallRate=overallTotal?Math.round((overallDone/overallTotal)*100):0;
+
+  // productive days: union of completed task days and completed activity days
+  const prodDays=new Set();
+  (d.completedDates||[]).forEach(ds=>prodDays.add(ds));
+  Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true)prodDays.add(k.split('_')[0])});
+
+  const streak=calcStreak(d);
+  const evSt=document.getElementById('ev-streak');if(evSt)evSt.textContent=streak;
+  const evTr=document.getElementById('ev-trend');
+
+  const setTxt=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  setTxt('ev-total-created',totalTasks);
+  setTxt('ev-total-completed',completedTasks);
+  setTxt('ev-acts-completed',actsCompleted);
+  setTxt('ev-ch-completed',chCompleted);
+  setTxt('ev-overall-rate',overallRate+'%');
+  setTxt('ev-prod-days',prodDays.size);
+
+  // trend vs last week
+  const thisMon=getMon(new Date());
+  const lastMon=new Date(thisMon);lastMon.setDate(thisMon.getDate()-7);
+  const prevMon=new Date(thisMon);prevMon.setDate(thisMon.getDate()-14);
+  const wkNow=weekKey(lastMon),wkPrev=weekKey(prevMon);
+  const weekDone=(wk)=>{
+    const mon=getWeekMonFromKey(wk);if(!mon)return 0;
+    let td=0;
+    all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk && t.status==='completed').forEach(()=>td++);
+    let ad=0;
+    for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true && k.startsWith(ds+'_'))ad++})}
+    const gd=goalWeekPct(d,wk).completed;
+    return td+ad+gd;
+  };
+  const nowVal=weekDone(wkNow),prevVal=weekDone(wkPrev);
+  const delta=prevVal?Math.round(((nowVal-prevVal)/prevVal)*100):0;
+  if(evTr)evTr.textContent=prevVal?`${delta>=0?'+':''}${delta}% vs last week`:'—';
+
+  // insights
+  const ins=(id,ic,txt)=>{const el=document.getElementById(id);if(el)el.innerHTML=`<div class="ei-ic">${ic}</div><div class="ei-txt">${txt}</div>`;};
+  const taskRate=totalTasks?Math.round((completedTasks/totalTasks)*100):0;
+  ins('ev-ins-1','✅',`You complete <b>${taskRate}%</b> of your tasks.`); 
+  // most productive weekday
+  const wdCount=[0,0,0,0,0,0,0];
+  prodDays.forEach(ds=>{const dt=new Date(ds+'T00:00:00');wdCount[dt.getDay()]++;});
+  const wdNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const bestWd=wdCount.indexOf(Math.max(...wdCount));
+  ins('ev-ins-2','📅',`Most productive day: <b>${wdNames[bestWd]}</b>.`);
+  // best week
+  const wkKeys=new Set();
+  all.forEach(t=>{if(t.dueDate)wkKeys.add(weekKey(new Date(t.dueDate+'T00:00:00')));});
+  Object.keys(d.weeklyGoals||{}).forEach(wk=>{if(d.weeklyGoals[wk]&&d.weeklyGoals[wk].length)wkKeys.add(wk);});
+  if(d.activities.length){ // include weeks since earliest activity date
+    d.activities.forEach(a=>{if(a.date)wkKeys.add(weekKey(new Date(a.date+'T00:00:00')));});
+  }
+  let bestWeek=null,bestPct=-1;
+  wkKeys.forEach(wk=>{
+    const mon=getWeekMonFromKey(wk);if(!mon)return;
+    let tPl=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk).length;
+    let tDn=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk && t.status==='completed').length;
+    // activities planned/completed by day matching
+    let aPl=0,aDn=0;
+    for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);aPl+=getActivitiesForDate(d,ds).length;Object.entries(d.activityLog).forEach(([k,v])=>{if(v===true && k.startsWith(ds+'_'))aDn++;})}
+    const g=goalWeekPct(d,wk);
+    const tot=tPl+aPl+g.total,don=tDn+aDn+g.completed;
+    const pct=tot?Math.round((don/tot)*100):0;
+    if(pct>bestPct){bestPct=pct;bestWeek=wk;}
+  });
+  if(bestWeek){const mon=getWeekMonFromKey(bestWeek);const fri=new Date(mon);fri.setDate(mon.getDate()+4);ins('ev-ins-3','🏆',`Best week: <b>Week ${weekNum(mon)}</b> (${fshort(mon)}–${fshort(fri)}).`);}
+  else ins('ev-ins-3','🏆',`Best week: —`);
+  // activity drop last 3 days
+  const today=todayStr();
+  const last3=[0,1,2].map(i=>{const dt=new Date(today+'T00:00:00');dt.setDate(dt.getDate()-i);return dsDate(dt);});
+  const prev3=[3,4,5].map(i=>{const dt=new Date(today+'T00:00:00');dt.setDate(dt.getDate()-i);return dsDate(dt);});
+  const cntActs=(arr)=>arr.reduce((sum,ds)=>sum+Object.entries(d.activityLog).filter(([k,v])=>v===true && k.startsWith(ds+'_')).length,0);
+  const l3=cntActs(last3),p3=cntActs(prev3);
+  if(p3 && l3<p3) ins('ev-ins-4','📉',`Activity dropped in last 3 days (${l3} vs ${p3}).`);
+  else ins('ev-ins-4','📈',`Activity is steady in last 3 days (${l3}).`);
+
+  // chart (last 12 weeks)
+  const canvas=document.getElementById('ev-chart');
+  if(canvas) drawEvalChart(canvas,d,all);
+
+  // weekly grid
+  const grid=document.getElementById('ev-week-grid');if(grid) renderEvalWeekGrid(grid,d,all);
+}
+
+function drawEvalChart(canvas,d,all){
+  const ctx=canvas.getContext('2d');if(!ctx)return;
+  const w=canvas.width=canvas.clientWidth||600;
+  const h=canvas.height=160;
+  ctx.clearRect(0,0,w,h);
+  const endMon=getMon(new Date());
+  const weeks=[];
+  for(let i=11;i>=0;i--){const mon=new Date(endMon);mon.setDate(endMon.getDate()-i*7);weeks.push(mon);}
+  const series=weeks.map(mon=>{
+    const wk=weekKey(mon);
+    let planned=0,done=0;
+    if(evalMetric==='tasks'){
+      const inW=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk);
+      planned=inW.length;
+      done=inW.filter(t=>t.status==='completed').length;
+    } else if(evalMetric==='activities'){
+      for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);planned+=getActivitiesForDate(d,ds).length;done+=Object.entries(d.activityLog||{}).filter(([k,v])=>v===true && k.startsWith(ds+'_')).length;}
+    } else {
+      const r=goalWeekPct(d,wk);planned=r.total;done=r.completed;
+    }
+    return { planned, done, label:'W'+weekNum(mon) };
+  });
+  const max=Math.max(1,...series.map(s=>Math.max(s.planned,s.done)));
+  // grid lines
+  ctx.strokeStyle='rgba(154,160,188,.35)';ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=20+i*((h-40)/3);ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w-10,y);ctx.stroke();}
+  // area for done
+  const x0=40,x1=w-10;
+  const step=(x1-x0)/(series.length-1);
+  ctx.beginPath();
+  series.forEach((s,idx)=>{
+    const x=x0+idx*step;
+    const y=20+(h-40)*(1-(s.done/max));
+    if(idx===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='rgba(79,70,229,.95)';ctx.lineWidth=2;ctx.stroke();
+  // planned overlay (optional)
+  ctx.beginPath();
+  series.forEach((s,idx)=>{
+    const x=x0+idx*step;
+    const y=20+(h-40)*(1-(s.planned/max));
+    if(idx===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='rgba(154,160,188,.9)';ctx.setLineDash([4,4]);ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
+  // x labels
+  ctx.fillStyle='rgba(154,160,188,.95)';ctx.font="10px 'Fira Code', monospace";
+  series.forEach((s,idx)=>{if(idx%2===0){const x=x0+idx*step;ctx.fillText(s.label,x-10,h-10);}});
+  const legend=document.getElementById('ev-chart-legend');
+  if(legend) legend.textContent=`Done (solid) vs Planned (dashed) — last 12 weeks`;
+}
+
+function renderEvalWeekGrid(grid,d,all){
+  grid.innerHTML='';
+  const weekKeys=new Set();
+  all.forEach(t=>{if(t.dueDate)weekKeys.add(weekKey(new Date(t.dueDate+'T00:00:00')));});
+  Object.keys(d.weeklyGoals||{}).forEach(wk=>{if(d.weeklyGoals[wk]&&d.weeklyGoals[wk].length)weekKeys.add(wk);});
+  d.activities.forEach(a=>{if(a.date)weekKeys.add(weekKey(new Date(a.date+'T00:00:00')));});
   const sorted=Array.from(weekKeys).sort();
   sorted.forEach(wk=>{
     const mon=getWeekMonFromKey(wk);if(!mon)return;
     const fri=new Date(mon);fri.setDate(mon.getDate()+4);
-    const card=document.createElement('div');card.className='stats-week-card';
-    const tasksInWeek=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk);
-    const tasksDoneInWeek=tasksInWeek.filter(t=>t.status==='completed').length;
-    const twPct=tasksInWeek.length?Math.round((tasksDoneInWeek/tasksInWeek.length)*100):0;
+    const tPl=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk).length;
+    const tDn=all.filter(t=>t.dueDate&&weekKey(new Date(t.dueDate+'T00:00:00'))===wk && t.status==='completed').length;
+    let aPl=0,aDn=0;
+    for(let i=0;i<7;i++){const dt=new Date(mon);dt.setDate(mon.getDate()+i);const ds=dsDate(dt);aPl+=getActivitiesForDate(d,ds).length;aDn+=Object.entries(d.activityLog||{}).filter(([k,v])=>v===true && k.startsWith(ds+'_')).length;}
     const g=goalWeekPct(d,wk);
-    card.innerHTML='<div class="swc-title">'+fshort(mon)+' – '+fshort(fri)+'</div><div class="swc-weeks">Týden '+weekNum(mon)+'</div><div class="swc-tasks">Úkoly: '+tasksDoneInWeek+'/'+tasksInWeek.length+' ('+twPct+'%)</div><div class="swc-pie-wrap"><svg class="swc-pie-svg" viewBox="0 0 100 100"></svg><span class="swc-pie-text">'+twPct+'%</span></div><div class="swc-goals">Výzvy: '+g.completed+'/'+g.total+' ('+g.pct+'%)</div>';
-    const pieEl=card.querySelector('.swc-pie-svg');if(pieEl)renderPieIn(pieEl,twPct,'var(--green)');
-    listEl.appendChild(card);
+    const tot=tPl+aPl+g.total,don=tDn+aDn+g.completed;
+    const pct=tot?Math.round((don/tot)*100):0;
+    const cls=pct>=75?'strong':pct>=45?'avg':'weak';
+    const card=document.createElement('div');card.className='ev-week-card '+cls;
+    card.innerHTML=`<div class="ev-week-top"><div><div class="ev-week-range">${fshort(mon)} – ${fshort(fri)}</div></div><div class="ev-week-pct">${pct}%</div></div><div class="ev-week-mid"><div class="ev-week-lines"><div class="ev-week-line">Tasks: ${tDn}/${tPl}</div><div class="ev-week-line">Activities: ${aDn}/${aPl}</div><div class="ev-week-line">Challenges: ${g.completed}/${g.total}</div></div><div class="ev-week-pie"><svg viewBox="0 0 100 100"></svg><span>${pct}%</span></div></div>`;
+    const pie=card.querySelector('svg');if(pie)renderPieIn(pie,pct,'var(--accent)');
+    grid.appendChild(card);
   });
 }
 function renderHeatmap(d){

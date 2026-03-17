@@ -62,7 +62,7 @@
     </div>
     <div class="sb-group">
       <div class="sb-group-label">Sledování</div>
-      <div class="sb-item" id="nav-stats" onclick="goPage('stats')"><div class="sb-item-icon">📊</div>Týdenní plnění</div>
+      <div class="sb-item" id="nav-stats" onclick="goPage('stats')"><div class="sb-item-icon">📊</div>Vyhodnocení</div>
       <div class="sb-item" id="nav-projects" onclick="goPage('projects')"><div class="sb-item-icon">🗂️</div>Projekty</div>
     </div>
     <div class="sb-group" id="sb-projects-group" style="display:none">
@@ -94,14 +94,12 @@
           <div class="dg-credit" id="dg-credit">Vytvořil —</div>
         </div>
       </div>
-      <div class="dash-grid">
-        <div class="stat-card sc-blue"><div class="sc-label">Celkem úkolů</div><div class="sc-value" id="sc-total">0</div><div class="sc-sub">na dnešek</div></div>
-        <div class="stat-card sc-amber"><div class="sc-label">Rozpracováno</div><div class="sc-value" id="sc-inprogress">0</div><div class="sc-sub">dnes</div></div>
-        <div class="stat-card sc-green"><div class="sc-label">Dokončeno</div><div class="sc-value" id="sc-done">0</div><div class="sc-sub">dnes</div></div>
-        <div class="stat-card sc-purple dash-pie-card">
-          <div class="sc-label">Plnění dnes</div>
-          <div class="dash-pie-wrap" id="dash-pie-wrap">
-            <svg class="dash-pie-svg" id="dash-pie-svg" viewBox="0 0 100 100" aria-hidden="true"></svg>
+      <div class="dash-progress-card">
+        <div class="dp-bar">
+          <div class="dp-fill" id="dp-fill" style="width:0%"></div>
+          <div class="dp-content" aria-hidden="true">
+            <div class="dp-left"><span id="dp-done">0</span>/<span id="dp-total">0</span> úkolů dokončeno</div>
+            <div class="dp-right" id="dp-pct">0%</div>
           </div>
         </div>
       </div>
@@ -111,7 +109,10 @@
             <div class="dash-collapsible-head">
               <button type="button" class="dash-collapse-btn" id="btn-toggle-today" onclick="toggleDashboardSection('today')" aria-expanded="true" title="Rozbalit / sbalit">▼</button>
               <div class="section-ttl" style="margin-bottom:0;flex:1">Dnešní úkoly</div>
-              <button class="btn-primary" onclick="openTaskModal('work',null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-primary" onclick="openTaskModal('work',null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+                <button class="btn-secondary" onclick="openActivityModal(null)"><span style="font-size:14px;line-height:0">＋</span>Aktivita</button>
+              </div>
             </div>
             <div class="dash-collapsible-body" id="collapse-today">
               <div class="today-tasks-list" id="today-tasks-list"><div class="empty-state">Žádné dnešní úkoly</div></div>
@@ -147,6 +148,7 @@
       <div class="ws-tabs" id="kanban-ws-tabs">
         <div class="ws-tab active" onclick="setKanbanWS('work',this)">Práce</div>
         <div class="ws-tab" onclick="setKanbanWS('personal',this)">Osobní</div>
+        <div class="ws-tab" onclick="setKanbanWS('all',this)">Vše</div>
       </div>
       <div class="kanban" id="kanban-work-board">
         <div class="kol" id="k-work-ideas" ondragover="onDragOver(event,'work','ideas')" ondrop="onDrop(event,'work','ideas')" ondragleave="onDragLeave(event)">
@@ -176,6 +178,9 @@
           <div class="kol-body" id="k-personal-body-completed"></div>
         </div>
       </div>
+      <div id="kanban-all-wrap" style="display:none">
+        <div class="kanban" id="kanban-all-board"></div>
+      </div>
     </div>
   </div>
 
@@ -194,19 +199,12 @@
           <div class="wp-wst" onclick="setWPWS('personal',this)">Osobní</div>
           <div class="wp-wst" onclick="setWPWS('both',this)">Vše</div>
         </div>
-        <button class="btn-secondary" onclick="openTaskModal('work',null)">+ Přidat úkol</button>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-secondary" onclick="openTaskModal('work',null)"><span style="font-size:14px;line-height:0">＋</span>Úkol</button>
+          <button class="btn-secondary" onclick="openActivityModal(null)"><span style="font-size:14px;line-height:0">＋</span>Aktivita</button>
+        </div>
       </div>
       <div class="week-grid" id="weekly-grid"></div>
-      <div class="sport-section">
-        <div class="sport-header">
-          <div class="sport-title-row">
-            <div class="sport-title sport-title-no-line">Sport &amp; Aktivita</div>
-            <span class="sport-week-label" id="sport-week-label" style="font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)">—</span>
-          </div>
-          <div class="sport-filters" id="sport-filters"></div>
-        </div>
-        <div class="sport-grid" id="sport-grid"></div>
-      </div>
     </div>
   </div>
 
@@ -231,13 +229,58 @@
   <!-- STATISTICS (Týdenní plnění) -->
   <div class="page" id="page-stats">
     <div class="scroll-area">
-      <div class="page-title stats-page-ttl">Týdenní plnění</div>
-      <div class="stats-cards">
-        <div class="stat-card sc-blue"><div class="sc-label">Naplánováno týdnů</div><div class="sc-value" id="st-weeks-planned">0</div><div class="sc-sub">týdnů s plánem</div></div>
-        <div class="stat-card sc-green stat-card-pie"><div class="sc-label">Splněno úkolů</div><div class="st-pie-wrap" id="st-tasks-pie-wrap"><svg class="st-pie-svg" id="st-tasks-pie-svg" viewBox="0 0 100 100"></svg><span class="st-pie-text" id="st-tasks-pie-text">0/0</span></div><div class="sc-sub" id="st-tasks-sub">0%</div></div>
-        <div class="stat-card sc-purple stat-card-pie"><div class="sc-label">Splněno výzev</div><div class="st-pie-wrap" id="st-goals-pie-wrap"><svg class="st-pie-svg" id="st-goals-pie-svg" viewBox="0 0 100 100"></svg><span class="st-pie-text" id="st-goals-pie-text">0%</span></div><div class="sc-sub" id="st-goals-sub">—</div></div>
+      <div class="eval-hero">
+        <div class="eval-hero-top">
+          <div>
+            <div class="page-title stats-page-ttl">Vyhodnocení</div>
+            <div class="page-sub">Souhrn vašich úspěchů a výkonu v čase</div>
+          </div>
+          <div class="eval-highlight">
+            <div class="eh-label">Aktuální série</div>
+            <div class="eh-value" id="ev-streak">0</div>
+            <div class="eh-sub" id="ev-streak-sub">dní v řadě</div>
+            <div class="eh-trend" id="ev-trend">—</div>
+          </div>
+        </div>
+        <div class="eval-kpis">
+          <div class="eval-kpi"><div class="ek-label">Total Tasks Created</div><div class="ek-value" id="ev-total-created">0</div><div class="ek-sub" id="ev-total-created-sub">—</div></div>
+          <div class="eval-kpi"><div class="ek-label">Total Tasks Completed</div><div class="ek-value" id="ev-total-completed">0</div><div class="ek-sub" id="ev-total-completed-sub">—</div></div>
+          <div class="eval-kpi"><div class="ek-label">Activities Completed</div><div class="ek-value" id="ev-acts-completed">0</div><div class="ek-sub" id="ev-acts-completed-sub">—</div></div>
+          <div class="eval-kpi"><div class="ek-label">Challenges Completed</div><div class="ek-value" id="ev-ch-completed">0</div><div class="ek-sub" id="ev-ch-completed-sub">—</div></div>
+          <div class="eval-kpi"><div class="ek-label">Overall Completion Rate</div><div class="ek-value" id="ev-overall-rate">0%</div><div class="ek-sub" id="ev-overall-rate-sub">—</div></div>
+          <div class="eval-kpi"><div class="ek-label">Productive Days</div><div class="ek-value" id="ev-prod-days">0</div><div class="ek-sub" id="ev-prod-days-sub">—</div></div>
+        </div>
       </div>
-      <div class="stats-week-list" id="stats-week-list"></div>
+
+      <div class="eval-card">
+        <div class="eval-card-head">
+          <div class="eval-card-title">Performance trend</div>
+          <div class="eval-toggle">
+            <button class="eval-tbtn active" id="ev-tbtn-tasks" onclick="setEvalMetric('tasks')">Tasks</button>
+            <button class="eval-tbtn" id="ev-tbtn-activities" onclick="setEvalMetric('activities')">Activities</button>
+            <button class="eval-tbtn" id="ev-tbtn-challenges" onclick="setEvalMetric('challenges')">Challenges</button>
+          </div>
+        </div>
+        <div class="eval-chart-wrap">
+          <canvas id="ev-chart" height="120"></canvas>
+        </div>
+        <div class="eval-chart-legend" id="ev-chart-legend">—</div>
+      </div>
+
+      <div class="eval-insights">
+        <div class="eval-insight" id="ev-ins-1"></div>
+        <div class="eval-insight" id="ev-ins-2"></div>
+        <div class="eval-insight" id="ev-ins-3"></div>
+        <div class="eval-insight" id="ev-ins-4"></div>
+      </div>
+
+      <div class="eval-card">
+        <div class="eval-card-head">
+          <div class="eval-card-title">Weekly performance</div>
+          <div class="eval-card-sub">Kliknutím zobrazíte náhled detailů</div>
+        </div>
+        <div class="eval-week-grid" id="ev-week-grid"></div>
+      </div>
     </div>
   </div>
 
@@ -299,7 +342,7 @@
       <div class="field"><label class="flabel">Stav</label><select class="fselect" id="tm-status"><option value="ideas">Nové úkoly</option><option value="inprogress">Rozpracováno</option><option value="completed">Splněno</option></select></div>
     </div>
     <div class="field"><label class="flabel">Opakování</label>
-      <div class="recur-opts">
+      <div class="recur-opts" id="tm-recur-opts">
         <div class="recur-chip sel" data-v="none" onclick="selRecur(this)">Žádné</div>
         <div class="recur-chip" data-v="daily" onclick="selRecur(this)">Denně</div>
         <div class="recur-chip" data-v="weekly" onclick="selRecur(this)">Týdně</div>
@@ -307,12 +350,33 @@
         <div class="recur-chip" data-v="monthly" onclick="selRecur(this)">Měsíčně</div>
       </div>
     </div>
-    <div class="field"><label class="flabel">Kontrolní seznam</label>
+    <div class="field"><label class="flabel">Seznam bodů</label>
       <div class="bullet-list" id="tm-bullets"></div>
       <div class="b-add-row"><input class="b-inp" id="tm-bi" placeholder="Přidat položku..."/><button class="b-add-btn" onclick="addBullet()">+ Přidat</button></div>
     </div>
-    <div class="field"><label class="flabel">Poznámky</label><textarea class="ftextarea" id="tm-notes" placeholder="Volitelné poznámky..."></textarea></div>
     <div class="modal-footer"><button class="btn-cancel" onclick="closeTaskModal()">Zrušit</button><button class="btn-save" id="tm-save-btn" onclick="saveTask()">Přidat úkol</button></div>
+  </div>
+</div>
+
+<!-- ACTIVITY MODAL -->
+<div class="modal-ov" id="activity-modal-ov" onclick="closeActivityModalOut(event)">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-ttl" id="activity-modal-title">Nová aktivita</div><button class="modal-x" onclick="closeActivityModal()">✕</button></div>
+    <div class="field"><label class="flabel">Aktivita</label><select class="fselect" id="am-activity"></select></div>
+    <div class="frow">
+      <div class="field"><label class="flabel">Datum aktivity</label><input type="date" class="fdate" id="am-date"/></div>
+      <div class="field"><label class="flabel">Čas <span style="font-weight:400;text-transform:none;font-size:9px;letter-spacing:0;color:var(--text3)">— volitelný</span></label><input type="time" class="fdate" id="am-time"/></div>
+    </div>
+    <div class="field"><label class="flabel">Opakování</label>
+      <div class="recur-opts" id="am-recur-opts">
+        <div class="recur-chip sel" data-v="none" onclick="selActRecur(this)">Žádné</div>
+        <div class="recur-chip" data-v="daily" onclick="selActRecur(this)">Denně</div>
+        <div class="recur-chip" data-v="weekly" onclick="selActRecur(this)">Týdně</div>
+        <div class="recur-chip" data-v="weekdays" onclick="selActRecur(this)">Pracovní dny</div>
+        <div class="recur-chip" data-v="monthly" onclick="selActRecur(this)">Měsíčně</div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeActivityModal()">Zrušit</button><button class="btn-save" id="am-save-btn" onclick="saveActivity()">Přidat aktivitu</button></div>
   </div>
 </div>
 
@@ -324,10 +388,10 @@
       <label class="flabel">Typ cíle</label>
       <div class="goal-type-selector">
         <div class="goal-type-opt sel" id="gto-habit" onclick="selGoalType('habit')">
-          <div class="gto-icon">✅</div><div class="gto-label">Návyk / Zvyk</div><div class="gto-sub">Denní zaškrtávání</div>
+          <div class="gto-icon">🏷️</div><div class="gto-label">Návyk</div>
         </div>
         <div class="goal-type-opt" id="gto-numeric" onclick="selGoalType('numeric')">
-          <div class="gto-icon">🔢</div><div class="gto-label">Numerický cíl</div><div class="gto-sub">Zadávání čísel denně</div>
+          <div class="gto-icon">🏆</div><div class="gto-label">Výzva</div>
         </div>
       </div>
     </div>

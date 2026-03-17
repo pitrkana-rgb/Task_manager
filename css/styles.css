@@ -159,7 +159,17 @@ input,select,textarea,button{font-family:inherit}
 .dg-sub{font-size:12px;opacity:.8}
 .dg-date{font-size:11px;font-family:'Fira Code',monospace;opacity:.9;margin-bottom:2px}
 .dg-credit{font-size:10px;opacity:.75}
-.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* dashboard progress bar (replaces 4 stat cards) */
+.dash-progress-card{padding:0}
+.dp-bar{position:relative;height:38px;border-radius:999px;overflow:hidden;background:linear-gradient(135deg,rgba(79,70,229,.22) 0%,rgba(139,92,246,.16) 100%);border:1px solid rgba(79,70,229,.22);box-shadow:var(--shadow-sm)}
+.dp-fill{position:absolute;inset:0 auto 0 0;height:100%;width:0%;border-radius:999px;transition:width .35s cubic-bezier(.4,0,.2,1),background-color .35s cubic-bezier(.4,0,.2,1)}
+.dp-content{position:relative;z-index:2;height:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.18)}
+.dp-left{font-size:16px;font-family:'Fira Code',monospace;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-right{font-size:16px;font-weight:900;font-family:'Fira Code',monospace;flex-shrink:0}
+
+/* dashboard weekly challenges title: no accent line */
+.dash-weekly-goals-card .section-ttl::before{display:none}
 .stat-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s}
 .stat-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
@@ -232,7 +242,7 @@ input,select,textarea,button{font-family:inherit}
 .ws-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .ws-tab{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid var(--border);color:var(--text2);background:var(--surface)}
 .ws-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(79,70,229,.25)}
-.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .kol{background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 260px)}
 .kol-head{padding:12px 14px 10px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .kol-name{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
@@ -258,6 +268,9 @@ input,select,textarea,button{font-family:inherit}
 .tact.done-btn:hover{color:var(--green)}
 .tact.del:hover{color:var(--red);background:var(--red-soft)}
 .tc-meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tc-ws-badge{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--border);font-family:'Fira Code',monospace}
+.tc-ws-badge.work{background:rgba(79,70,229,.10);border-color:rgba(79,70,229,.25);color:var(--accent)}
+.tc-ws-badge.personal{background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.25);color:var(--green)}
 .tc-date{font-size:9px;font-family:'Fira Code',monospace;color:var(--text2);background:var(--surface2);padding:2px 7px;border-radius:20px;border:1px solid var(--border)}
 .tc-date.overdue{color:var(--red);background:var(--red-soft)}
 .tc-recur{font-size:9px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;font-weight:600}
@@ -289,6 +302,13 @@ input,select,textarea,button{font-family:inherit}
 .wk-col.today-col .wk-datenum{color:var(--accent)}
 .wk-mon{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3);margin-top:1px}
 .wk-col-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:80px;overflow-y:auto;scrollbar-width:thin}
+.wk-day-stat{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm)}
+.wk-ds-left{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wk-ds-line{font-size:10px;color:var(--text2);font-family:'Fira Code',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-ds-line b{color:var(--text)}
+.wk-ds-pie{position:relative;width:40px;height:40px;flex-shrink:0}
+.wk-ds-svg{width:100%;height:100%}
+.wk-ds-pct{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Fira Code',monospace;font-weight:800;color:var(--text2)}
 .wk-task{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;position:relative;overflow:hidden;transition:all .15s;cursor:pointer}
 .wk-task:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
 .wk-task::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
@@ -303,6 +323,15 @@ input,select,textarea,button{font-family:inherit}
 .wk-sport-toggle{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;font-weight:700}
 .wk-sport-toggle.done{background:var(--green);border-color:var(--green);color:#fff}
 .wk-sport-toggle.done::before{content:'✓'}
+
+.wk-activity{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:10px}
+.wk-act-icon{font-size:12px}
+.wk-act-name{flex:1;min-width:0;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-act-time{font-family:'Fira Code',monospace;color:var(--text3);font-size:9px;white-space:nowrap}
+.wk-act-recur{font-size:11px;opacity:.9}
+.wk-act-toggle{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;font-weight:700}
+.wk-act-toggle.done{background:var(--green);border-color:var(--green);color:#fff}
+.wk-act-toggle.done::before{content:'✓'}
 
 /* sport tracker */
 .sport-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm)}
@@ -335,14 +364,20 @@ input,select,textarea,button{font-family:inherit}
 .wg-nav-btn:hover{background:var(--surface2);color:var(--text)}
 .wg-curr-label{font-size:12px;font-weight:600;color:var(--text);font-family:'Fira Code',monospace;min-width:70px;text-align:center}
 .goals-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+
+/* mobile: stack weekly columns and challenges cards */
+@media (max-width:900px){
+  .week-grid{grid-template-columns:1fr}
+  .goals-grid{grid-template-columns:1fr}
+}
 /* goal card */
 .goal-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column;gap:0}
 .goal-card:hover{box-shadow:var(--shadow)}
 .gc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
 .gc-title{font-size:14px;font-weight:700;color:var(--text);flex:1;line-height:1.3}
 .gc-type-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;flex-shrink:0}
-.gc-type-habit{background:var(--purple-soft);color:var(--purple)}
-.gc-type-numeric{background:var(--blue-soft);color:var(--blue)}
+.gc-type-habit{background:var(--green-soft);color:var(--green)}
+.gc-type-numeric{background:var(--purple-soft);color:var(--purple)}
 .gc-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .gc-del:hover{color:var(--red);background:var(--red-soft)}
 /* progress bar */
@@ -375,23 +410,54 @@ input,select,textarea,button{font-family:inherit}
 .add-goal-icon{font-size:28px;opacity:.4}
 .add-goal-label{font-size:12px;color:var(--text3);font-weight:500}
 
-/* ── STATISTICS (Týdenní plnění) ── */
+/* ── EVALUATION (Vyhodnocení) ── */
 .stats-page-ttl::before{display:none}
-.stats-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.stat-card-pie{display:flex;flex-direction:column;align-items:center}
-.stat-card-pie .sc-label{margin-bottom:4px}
-.st-pie-wrap{position:relative;width:56px;height:56px;margin:4px 0 0;flex-shrink:0}
-.st-pie-svg{width:100%;height:100%}
-.st-pie-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-family:'Fira Code',monospace;font-weight:700;color:var(--text2);pointer-events:none}
-.stats-week-list{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
-.stats-week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow-sm);min-width:140px;max-width:200px;flex:1}
-.stats-week-card .swc-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.stats-week-card .swc-weeks{font-size:11px;font-family:'Fira Code',monospace;color:var(--text2);margin-bottom:6px}
-.stats-week-card .swc-pie-wrap{position:relative;width:44px;height:44px;margin:6px auto;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.stats-week-card .swc-pie-svg{width:100%;height:100%}
-.stats-week-card .swc-pie-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Fira Code',monospace;font-weight:700;color:var(--text2)}
-.stats-week-card .swc-tasks{font-size:10px;color:var(--text3);margin-top:4px}
-.stats-week-card .swc-goals{font-size:10px;color:var(--text3)}
+.eval-hero{background:linear-gradient(135deg,rgba(79,70,229,.10) 0%,rgba(139,92,246,.08) 100%);border:1px solid var(--border);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+.eval-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.eval-highlight{background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);color:#fff;border-radius:16px;padding:14px 16px;min-width:180px;box-shadow:0 10px 30px rgba(79,70,229,.18);position:relative;overflow:hidden}
+.eval-highlight::after{content:'';position:absolute;right:-35px;top:-35px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.10)}
+.eh-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.eh-value{font-size:34px;font-weight:900;letter-spacing:-.04em;font-family:'Fira Code',monospace;line-height:1.05;margin-top:4px}
+.eh-sub{font-size:11px;opacity:.85}
+.eh-trend{margin-top:8px;font-size:10px;font-family:'Fira Code',monospace;opacity:.9}
+.eval-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
+.eval-kpi{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm)}
+.ek-label{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.ek-value{font-size:26px;font-weight:900;letter-spacing:-.03em;color:var(--text);font-family:'Fira Code',monospace;margin-top:6px;line-height:1.05}
+.ek-sub{margin-top:6px;font-size:10px;color:var(--text3);font-family:'Fira Code',monospace}
+
+.eval-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+.eval-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.eval-card-title{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.eval-card-sub{font-size:10px;color:var(--text3);font-family:'Fira Code',monospace}
+.eval-toggle{display:flex;gap:6px;flex-wrap:wrap}
+.eval-tbtn{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;font-size:11px;font-weight:700;color:var(--text2);transition:all .15s}
+.eval-tbtn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.eval-tbtn:hover{border-color:var(--accent);color:var(--accent)}
+.eval-chart-wrap{width:100%;height:160px;position:relative}
+.eval-chart-wrap canvas{width:100%;height:160px}
+.eval-chart-legend{margin-top:8px;font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)}
+
+.eval-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.eval-insight{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm);font-size:12px;color:var(--text2);display:flex;gap:10px;align-items:flex-start}
+.eval-insight .ei-ic{font-size:16px;flex-shrink:0;margin-top:1px}
+.eval-insight .ei-txt{line-height:1.5}
+
+.eval-week-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.ev-week-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px 14px;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s;cursor:pointer}
+.ev-week-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.ev-week-card.strong{border-color:rgba(16,185,129,.35)}
+.ev-week-card.avg{border-color:rgba(245,158,11,.35)}
+.ev-week-card.weak{border-color:rgba(239,68,68,.35)}
+.ev-week-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ev-week-range{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)}
+.ev-week-pct{font-size:26px;font-weight:900;font-family:'Fira Code',monospace;letter-spacing:-.03em;color:var(--text)}
+.ev-week-mid{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ev-week-lines{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ev-week-line{font-size:10px;color:var(--text3);font-family:'Fira Code',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-week-pie{position:relative;width:44px;height:44px;flex-shrink:0}
+.ev-week-pie svg{width:100%;height:100%}
+.ev-week-pie span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Fira Code',monospace;font-weight:800;color:var(--text2)}
 
 /* ── PROJECTS ── */
 .projects-layout{display:flex;flex:1;min-height:0;background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-sm)}
