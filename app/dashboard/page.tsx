@@ -18,7 +18,11 @@ export default function DashboardPage() {
       if (!uid) return
       try {
         const supabase = getSupabase()
-        const { data } = await supabase.from('profiles').select('name').eq('id', uid).maybeSingle()
+        const { data } = (await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', uid)
+          .maybeSingle()) as { data: { name: string } | null }
         if (!alive) return
         setProfileName((data?.name ?? '').trim())
       } catch {
