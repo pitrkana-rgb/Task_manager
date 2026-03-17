@@ -1,0 +1,491 @@
+/* FlowTask — Task Manager Application
+   Main stylesheet: variables, layout, and component styles. */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F6FB;--surface:#FFFFFF;--surface2:#F8F9FD;--surface3:#EEF0F8;
+  --border:#E4E7F2;--border2:#D0D4E8;
+  --text:#0F1022;--text2:#5B6080;--text3:#9AA0BC;
+  --accent:#4F46E5;--accent2:#6366F1;--accent-soft:rgba(79,70,229,0.08);--accent-glow:rgba(79,70,229,0.18);
+  --green:#10B981;--green-soft:rgba(16,185,129,0.1);
+  --amber:#F59E0B;--amber-soft:rgba(245,158,11,0.1);
+  --red:#EF4444;--red-soft:rgba(239,68,68,0.09);
+  --purple:#8B5CF6;--purple-soft:rgba(139,92,246,0.1);
+  --blue:#3B82F6;--blue-soft:rgba(59,130,246,0.1);
+  --shadow-sm:0 1px 3px rgba(15,16,34,0.06),0 1px 2px rgba(15,16,34,0.04);
+  --shadow:0 2px 8px rgba(15,16,34,0.07),0 4px 20px rgba(15,16,34,0.04);
+  --shadow-lg:0 8px 32px rgba(15,16,34,0.12),0 2px 8px rgba(15,16,34,0.06);
+  --r:14px;--rs:9px;--rxs:6px;--nav:220px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex}
+input,select,textarea,button{font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ── PROFILE SCREEN ── */
+#profile-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.ps-card{background:var(--surface);border-radius:20px;padding:40px;width:440px;max-width:95vw;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.ps-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.ps-logo-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(79,70,229,0.35)}
+.ps-logo-icon svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+.ps-logo-name{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.ps-logo-sub{font-size:11px;color:var(--text3);font-weight:500}
+.ps-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ps-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.ps-profiles{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.ps-profile-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s}
+.ps-profile-item:hover{border-color:var(--accent);background:var(--accent-soft)}
+.ps-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.ps-pname{font-size:13px;font-weight:600;color:var(--text)}
+.ps-prole{font-size:11px;color:var(--text3)}
+.ps-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.ps-divider::before,.ps-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.ps-divider span{font-size:11px;color:var(--text3);font-weight:500}
+.ps-new{display:flex;flex-direction:column;gap:10px}
+.ps-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s}
+.ps-input:focus{border-color:var(--accent)}
+.ps-input::placeholder{color:var(--text3)}
+.ps-colors{display:flex;gap:8px;align-items:center}
+.ps-color-label{font-size:11px;color:var(--text3);font-weight:500}
+.ps-clr{width:24px;height:24px;border-radius:50%;cursor:pointer;transition:transform .15s;border:2px solid transparent}
+.ps-clr.sel,.ps-clr:hover{transform:scale(1.2);border-color:var(--text)}
+.ps-btn{width:100%;background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em;padding:11px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(79,70,229,.3)}
+.ps-btn:hover{background:#4338CA;box-shadow:0 4px 20px rgba(79,70,229,.45)}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--nav);flex-shrink:0;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-brand{display:flex;align-items:center;gap:10px}
+.sb-brand-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,.3)}
+.sb-brand-icon svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.sb-brand-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em}
+.sb-brand-sub{font-size:9px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.sb-nav{flex:1;overflow-y:auto;padding:12px 10px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-group{margin-bottom:20px}
+.sb-group-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:1px;font-size:12px;font-weight:500;color:var(--text2)}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sb-item-icon{width:26px;height:26px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:all .15s}
+.sb-item.active .sb-item-icon{background:var(--accent);border-color:var(--accent)}
+.sb-badge{margin-left:auto;font-size:9px;font-family:'Fira Code',monospace;background:var(--surface3);color:var(--text2);padding:1px 7px;border-radius:20px;border:1px solid var(--border)}
+.sb-item.active .sb-badge{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sb-projects-list{padding:0 8px}
+.sb-proj-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:1px}
+.sb-proj-item:hover{background:var(--surface2);color:var(--text)}
+.sb-proj-item.active{color:var(--accent);background:var(--accent-soft)}
+.sb-proj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-bottom{padding:12px 10px;border-top:1px solid var(--border);flex-shrink:0}
+.sb-profile-btn{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .15s;width:100%}
+.sb-profile-btn:hover{background:var(--surface2)}
+.sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:var(--text)}
+.sb-urole{font-size:10px;color:var(--text3)}
+.sb-signout{margin-left:auto;font-size:11px;color:var(--text3);cursor:pointer;transition:color .15s}
+.sb-signout:hover{color:var(--red)}
+
+/* ── MAIN ── */
+#app{display:none;flex:1;flex-direction:column;overflow:hidden;min-width:0}
+#app.show{display:flex}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+.page.active{display:flex}
+.scroll-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+/* ── COMMON ── */
+.page-title{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.page-sub{font-size:11px;color:var(--text3);font-family:'Fira Code',monospace;margin-top:3px}
+.section-ttl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section-ttl::before{content:'';width:14px;height:2px;background:var(--accent);border-radius:2px;display:inline-block}
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow-sm);padding:18px 20px}
+.pbadge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.07em;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.p-high{background:var(--red-soft);color:var(--red)}
+.p-medium{background:var(--amber-soft);color:var(--amber)}
+.p-low{background:var(--green-soft);color:var(--green)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:all .2s;box-shadow:0 2px 10px rgba(79,70,229,.25)}
+.btn-primary:hover{background:#4338CA;box-shadow:0 4px 18px rgba(79,70,229,.4);transform:translateY(-1px)}
+.btn-primary svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:600;letter-spacing:.04em;padding:6px 14px;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(15,16,34,.5);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;padding:28px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border2);scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-ttl{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.modal-x{background:none;border:none;cursor:pointer;color:var(--text3);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.modal-x:hover{background:var(--surface2);color:var(--text)}
+.field{margin-bottom:15px}
+.flabel{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block}
+.finput,.fselect,.fdate,.ftextarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;padding:10px 13px;outline:none;transition:border-color .2s}
+.finput:focus,.fdate:focus,.ftextarea:focus{border-color:var(--accent)}
+.finput::placeholder,.ftextarea::placeholder{color:var(--text3)}
+.fselect{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239AA0BC' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+.fdate{font-family:'Fira Code',monospace;font-size:12px;color-scheme:light}
+.ftextarea{resize:vertical;min-height:72px;line-height:1.6}
+.frow{display:flex;gap:10px}
+.frow .field{flex:1}
+.bullet-list{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;min-height:4px}
+.b-item{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);padding:7px 12px}
+.b-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.b-text{flex:1;font-size:12px;color:var(--text)}
+.b-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;transition:color .15s;line-height:1;padding:0 2px}
+.b-del:hover{color:var(--red)}
+.b-add-row{display:flex;gap:7px}
+.b-inp{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s}
+.b-inp:focus{border-color:var(--border2)}
+.b-inp::placeholder{color:var(--text3)}
+.b-add-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:700;padding:8px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.b-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.recur-opts{display:flex;gap:7px;flex-wrap:wrap}
+.recur-chip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;background:var(--surface2)}
+.recur-chip.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.btn-cancel{background:none;border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:9px 20px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-save{background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:9px 22px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(79,70,229,.28)}
+.btn-save:hover{background:#4338CA;box-shadow:0 4px 20px rgba(79,70,229,.4);transform:translateY(-1px)}
+
+/* ── DASHBOARD ── */
+.dash-greeting{background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);border-radius:var(--r);padding:22px 26px;color:#fff;position:relative;overflow:hidden;min-height:72px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.dash-greeting::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+.dash-greeting::before{content:'';position:absolute;right:60px;bottom:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.dg-left{flex:1;min-width:0}
+.dg-right{text-align:right;flex-shrink:0}
+.dg-name{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+.dg-sub{font-size:12px;opacity:.8}
+.dg-date{font-size:11px;font-family:'Fira Code',monospace;opacity:.9;margin-bottom:2px}
+.dg-credit{font-size:10px;opacity:.75}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.sc-blue::before{background:var(--accent)}
+.sc-green::before{background:var(--green)}
+.sc-amber::before{background:var(--amber)}
+.sc-purple::before{background:var(--purple)}
+.sc-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.sc-value{font-size:30px;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1;font-family:'Fira Code',monospace}
+.sc-sub{font-size:10px;color:var(--text3);margin-top:4px;font-family:'Fira Code',monospace}
+
+/* dashboard pie chart (replaces Série tile) */
+.dash-pie-card{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.dash-pie-wrap{width:56px;height:56px;margin:2px 0 0;flex-shrink:0}
+.dash-pie-svg{width:100%;height:100%}
+
+/* dashboard two-column layout */
+.dash-two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.dash-col-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.dash-col-right{min-width:0}
+@media (max-width:900px){.dash-two-col{grid-template-columns:1fr}}
+
+/* collapsible sections (no accent line before titles) */
+.dash-collapsible{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden}
+.dash-collapsible-head{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.dash-collapsible-head .section-ttl::before{display:none}
+.dash-collapsible-body{padding:14px;max-height:1200px;transition:max-height .3s ease-out;overflow:hidden}
+.dash-collapsible-body.collapsed{max-height:0!important;padding-top:0;padding-bottom:0;border-bottom:none}
+.dash-collapse-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:var(--text2);transition:transform .2s,color .2s}
+.dash-collapse-btn:hover{color:var(--accent);border-color:var(--accent)}
+.dash-collapse-btn.collapsed{transform:rotate(-90deg)}
+
+/* dashboard weekly goals panel (circular progress per goal) */
+.dash-weekly-goals-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm);position:sticky;top:24px}
+.dash-wg-list{display:flex;flex-direction:column;gap:14px}
+.dash-wg-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.dash-wg-row:last-child{border-bottom:none}
+.dash-wg-circle{width:44px;height:44px;flex-shrink:0}
+.dash-wg-text{flex:1;min-width:0}
+.dash-wg-name{color:var(--text);font-weight:600;font-size:13px;line-height:1.3;word-break:break-word}
+.dash-wg-complete{color:var(--text3);font-size:11px;font-family:'Fira Code',monospace;margin-top:2px}
+.dash-wg-empty{color:var(--text3);font-size:12px;font-family:'Fira Code',monospace;padding:12px 0}
+
+/* today tasks */
+.today-tasks-list{display:flex;flex-direction:column;gap:8px;margin-top:0}
+.today-task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm);transition:all .18s;position:relative;overflow:hidden}
+.today-task-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.today-task-item.p-high-t::before{background:var(--red)}
+.today-task-item.p-medium-t::before{background:var(--amber)}
+.today-task-item.p-low-t::before{background:var(--green)}
+.today-task-item:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateX(2px)}
+.tti-check{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.tti-check.done{background:var(--green);border-color:var(--green)}
+.tti-check.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.tti-title{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.tti-title.done{text-decoration:line-through;color:var(--text3)}
+.tti-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.tti-recur{font-size:9px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;font-weight:600}
+.tti-ws{font-size:9px;font-family:'Fira Code',monospace;color:var(--text3)}
+.empty-state{text-align:center;padding:24px 16px;color:var(--text3);font-size:12px;font-family:'Fira Code',monospace}
+
+/* upcoming */
+.upcoming-list{display:flex;flex-direction:column;gap:7px}
+.up-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;font-size:11px;transition:all .15s}
+.up-item:hover{border-color:var(--border2);background:var(--surface)}
+.up-date{font-family:'Fira Code',monospace;color:var(--text3);font-size:10px;white-space:nowrap;min-width:72px}
+.up-title{flex:1;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── TASK MANAGER (kanban) ── */
+.ws-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.ws-tab{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid var(--border);color:var(--text2);background:var(--surface)}
+.ws-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(79,70,229,.25)}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kol{background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 260px)}
+.kol-head{padding:12px 14px 10px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.kol-name{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
+.kol-dot{width:7px;height:7px;border-radius:50%}
+.kol-cnt{font-size:10px;font-family:'Fira Code',monospace;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:20px}
+.kol-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.kol-body.drag-over{background:var(--accent-soft);border-radius:8px}
+.task-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:12px 14px;cursor:grab;transition:all .18s;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.task-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.task-card.ph::before{background:var(--red)}
+.task-card.pm::before{background:var(--amber)}
+.task-card.pl::before{background:var(--green)}
+.task-card:hover{box-shadow:var(--shadow);transform:translateY(-2px);border-color:var(--border2)}
+.task-card.dragging{opacity:.3;transform:scale(.97)}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tc-title{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.tc-title.done{text-decoration:line-through;color:var(--text3)}
+.tc-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.task-card:hover .tc-actions{opacity:1}
+.tact{background:none;border:none;cursor:pointer;color:var(--text3);width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.tact:hover{background:var(--surface2)}
+.tact.edit:hover{color:var(--accent)}
+.tact.done-btn:hover{color:var(--green)}
+.tact.del:hover{color:var(--red);background:var(--red-soft)}
+.tc-meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tc-date{font-size:9px;font-family:'Fira Code',monospace;color:var(--text2);background:var(--surface2);padding:2px 7px;border-radius:20px;border:1px solid var(--border)}
+.tc-date.overdue{color:var(--red);background:var(--red-soft)}
+.tc-recur{font-size:9px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;font-weight:600}
+.cl-wrap{margin-top:9px}
+.cli-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);margin-bottom:3px}
+.cli-item input{width:12px;height:12px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.cli-item span.ck{text-decoration:line-through;color:var(--text3)}
+.cl-track{margin-top:7px;height:4px;background:var(--surface2);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.cl-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .4s cubic-bezier(.4,0,.2,1)}
+.completed-kol .task-card{opacity:.5}
+
+/* ── WEEKLY PLANNER ── */
+.wp-header-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.week-chip-btn{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:7px 16px;cursor:pointer;transition:all .18s;box-shadow:var(--shadow-sm)}
+.week-chip-btn:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(79,70,229,.12)}
+.wcb-wn{font-size:11px;font-family:'Fira Code',monospace;color:var(--accent);font-weight:500}
+.wcb-range{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)}
+.wp-ws-toggle{display:flex;gap:6px}
+.wp-wst{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--text2);background:var(--surface);transition:all .15s}
+.wp-wst.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.wk-col{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.wk-col.today-col{border-color:rgba(79,70,229,.3);background:rgba(79,70,229,.015)}
+.wk-col:hover{box-shadow:var(--shadow)}
+.wk-col-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.wk-dayname{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.wk-col.today-col .wk-dayname{color:var(--accent)}
+.wk-datenum{font-size:22px;font-weight:800;color:var(--text);font-family:'Fira Code',monospace;letter-spacing:-.02em;margin-top:2px}
+.wk-col.today-col .wk-datenum{color:var(--accent)}
+.wk-mon{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3);margin-top:1px}
+.wk-col-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:80px;overflow-y:auto;scrollbar-width:thin}
+.wk-task{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;position:relative;overflow:hidden;transition:all .15s;cursor:pointer}
+.wk-task:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.wk-task::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.wk-task.p-high::before{background:var(--red)}
+.wk-task.p-medium::before{background:var(--amber)}
+.wk-task.p-low::before{background:var(--green)}
+.wk-task-title{font-size:11px;font-weight:600;color:var(--text);padding-left:5px;margin-bottom:3px;line-height:1.3}
+.wk-empty{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3);text-align:center;padding:16px 0}
+.wk-sport{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:10px}
+.wk-sport-icon{font-size:12px}
+.wk-sport-name{flex:1;min-width:0;font-weight:500;color:var(--text)}
+.wk-sport-toggle{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;font-weight:700}
+.wk-sport-toggle.done{background:var(--green);border-color:var(--green);color:#fff}
+.wk-sport-toggle.done::before{content:'✓'}
+
+/* sport tracker */
+.sport-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm)}
+.sport-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.sport-title-row{display:flex;align-items:center;gap:10px}
+.sport-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.sport-title::before{content:'';width:14px;height:2px;background:var(--green);border-radius:2px}
+.sport-title-no-line::before{display:none}
+.sport-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:relative}
+.sport-add-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--rs);border:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);background:var(--surface);cursor:pointer;transition:all .15s}
+.sport-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sport-add-btn .sport-plus{font-size:16px;line-height:1;font-weight:400}
+.sport-add-dropdown{position:absolute;top:100%;left:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--shadow);z-index:50;min-width:180px;max-height:220px;overflow-y:auto}
+.sport-add-dropdown button{display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;font-size:12px;cursor:pointer;transition:background .1s}
+.sport-add-dropdown button:hover{background:var(--surface2)}
+.sport-remove-act{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 4px;margin-left:4px;border-radius:4px;transition:color .15s}
+.sport-remove-act:hover{color:var(--red)}
+.sport-grid{display:grid;gap:7px 10px;align-items:center}
+.sport-act-name{font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sport-act-icon{font-size:16px}
+.sport-toggle{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--surface2);margin:0 auto}
+.sport-toggle.done{background:var(--green-soft);border-color:var(--green)}
+.sport-toggle.done::after{content:'✓';font-size:13px;color:var(--green);font-weight:700}
+.sport-toggle:not(.done){color:transparent}
+.sport-col-head{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);text-align:center}
+
+/* ── WEEKLY GOALS ── */
+.goals-week-nav{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px 8px;box-shadow:var(--shadow-sm)}
+.wg-nav-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wg-nav-btn:hover{background:var(--surface2);color:var(--text)}
+.wg-curr-label{font-size:12px;font-weight:600;color:var(--text);font-family:'Fira Code',monospace;min-width:70px;text-align:center}
+.goals-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+/* goal card */
+.goal-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column;gap:0}
+.goal-card:hover{box-shadow:var(--shadow)}
+.gc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.gc-title{font-size:14px;font-weight:700;color:var(--text);flex:1;line-height:1.3}
+.gc-type-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.gc-type-habit{background:var(--purple-soft);color:var(--purple)}
+.gc-type-numeric{background:var(--blue-soft);color:var(--blue)}
+.gc-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.gc-del:hover{color:var(--red);background:var(--red-soft)}
+/* progress bar */
+.gc-progress-wrap{margin-bottom:12px}
+.gc-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.gc-track{flex:1;height:8px;background:var(--surface3);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.gc-fill{height:100%;border-radius:20px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.gc-pct-label{font-size:12px;font-family:'Fira Code',monospace;font-weight:600;min-width:40px;text-align:right}
+.gc-stats-row{display:flex;gap:14px}
+.gc-stat{display:flex;flex-direction:column;gap:2px}
+.gc-stat-val{font-size:16px;font-weight:800;color:var(--text);font-family:'Fira Code',monospace;letter-spacing:-.02em}
+.gc-stat-lbl{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+/* habit: day checkboxes */
+.gc-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:0}
+.gc-day-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gc-day-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.gc-day-cb{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:0}
+.gc-day-cb.checked{background:var(--accent-soft);border-color:var(--accent)}
+.gc-day-cb.checked::after{content:'✓';font-size:13px;color:var(--accent);font-weight:700}
+.gc-day-cb:hover:not(.checked){background:var(--surface3);border-color:var(--border2)}
+/* numeric: day inputs */
+.gc-numeric-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.gc-num-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gc-num-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.gc-num-inp{width:100%;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-family:'Fira Code',monospace;font-size:12px;font-weight:500;padding:5px 3px;text-align:center;outline:none;transition:border-color .15s}
+.gc-num-inp:focus{border-color:var(--accent)}
+/* add goal */
+.add-goal-card{background:var(--surface2);border-radius:var(--r);border:2px dashed var(--border2);padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;min-height:140px}
+.add-goal-card:hover{border-color:var(--accent);background:var(--accent-soft)}
+.add-goal-icon{font-size:28px;opacity:.4}
+.add-goal-label{font-size:12px;color:var(--text3);font-weight:500}
+
+/* ── STATISTICS (Týdenní plnění) ── */
+.stats-page-ttl::before{display:none}
+.stats-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.stat-card-pie{display:flex;flex-direction:column;align-items:center}
+.stat-card-pie .sc-label{margin-bottom:4px}
+.st-pie-wrap{position:relative;width:56px;height:56px;margin:4px 0 0;flex-shrink:0}
+.st-pie-svg{width:100%;height:100%}
+.st-pie-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-family:'Fira Code',monospace;font-weight:700;color:var(--text2);pointer-events:none}
+.stats-week-list{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+.stats-week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow-sm);min-width:140px;max-width:200px;flex:1}
+.stats-week-card .swc-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.stats-week-card .swc-weeks{font-size:11px;font-family:'Fira Code',monospace;color:var(--text2);margin-bottom:6px}
+.stats-week-card .swc-pie-wrap{position:relative;width:44px;height:44px;margin:6px auto;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.stats-week-card .swc-pie-svg{width:100%;height:100%}
+.stats-week-card .swc-pie-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Fira Code',monospace;font-weight:700;color:var(--text2)}
+.stats-week-card .swc-tasks{font-size:10px;color:var(--text3);margin-top:4px}
+.stats-week-card .swc-goals{font-size:10px;color:var(--text3)}
+
+/* ── PROJECTS ── */
+.projects-layout{display:flex;flex:1;min-height:0;background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-sm)}
+.proj-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface2)}
+.proj-sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.proj-sb-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.proj-sb-add{background:var(--accent);border:none;border-radius:6px;color:#fff;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .15s}
+.proj-sb-add:hover{background:#4338CA}
+.proj-list{flex:1;overflow-y:auto;padding:8px;scrollbar-width:thin}
+.proj-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:2px;font-size:12px;font-weight:500;color:var(--text2)}
+.proj-list-item:hover{background:var(--surface);color:var(--text)}
+.proj-list-item.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.proj-list-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proj-list-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-list-item:hover .proj-list-del{color:var(--text3)}
+.proj-list-del:hover{color:var(--red)!important}
+.proj-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.proj-main-head{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px}
+.proj-main-title{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.02em;background:none;border:none;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.proj-main-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.proj-no-selection{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--text3);font-family:'Fira Code',monospace;font-size:12px}
+.proj-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.proj-sect-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.proj-sect-title{font-size:12px;font-weight:700;color:var(--text);flex:1;background:none;border:none;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.proj-sect-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;transition:color .15s}
+.proj-sect-del:hover{color:var(--red)}
+.proj-sect-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.proj-notes{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s;line-height:1.6}
+.proj-notes:focus{border-color:var(--accent)}
+.proj-task-list{display:flex;flex-direction:column;gap:5px}
+.proj-task-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;transition:all .15s}
+.proj-task-item:hover{border-color:var(--border2)}
+.proj-task-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-task-item:hover .proj-task-del{color:var(--text3)}
+.proj-task-del:hover{color:var(--red)!important}
+.proj-link-list,.proj-file-list{display:flex;flex-direction:column;gap:5px}
+.proj-link-item,.proj-file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:12px;transition:all .15s}
+.proj-link-item:hover,.proj-file-item:hover{border-color:var(--border2)}
+.proj-link-del,.proj-file-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-link-item:hover .proj-link-del,.proj-file-item:hover .proj-file-del{color:var(--text3)}
+.proj-link-del:hover,.proj-file-del:hover{color:var(--red)!important}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.settings-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow-sm)}
+.ss-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px}
+.profile-list{display:flex;flex-direction:column;gap:8px}
+.profile-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;transition:all .15s}
+.profile-item.current{border-color:var(--accent);background:var(--accent-soft)}
+.pi-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pi-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.pi-switch{font-size:10px;color:var(--accent);cursor:pointer;font-weight:600}
+.pi-switch:hover{text-decoration:underline}
+.pi-del{color:var(--red);cursor:pointer;font-size:11px;background:none;border:none}
+.settings-btn{width:100%;padding:10px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:8px}
+.settings-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface2)}
+.settings-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+
+/* ── WEEK PICKER ── */
+.wpo-ov{position:fixed;inset:0;background:rgba(15,16,34,.4);z-index:700;display:none;align-items:flex-start;justify-content:flex-start;padding:80px 0 0 calc(var(--nav) + 24px);backdrop-filter:blur(3px)}
+.wpo-ov.open{display:flex}
+.wpo-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px;min-width:270px;box-shadow:var(--shadow-lg)}
+.wpo-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.wpo-mlabel{font-size:13px;font-weight:700;color:var(--text)}
+.wpo-nav{display:flex;gap:4px}
+.wpo-nbtn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;padding:4px 11px;cursor:pointer;transition:all .15s}
+.wpo-nbtn:hover{background:var(--border);color:var(--text)}
+.wpo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.wpo-dow{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:3px 0 7px}
+.wpo-d{font-size:11px;font-family:'Fira Code',monospace;padding:6px 3px;border-radius:5px;cursor:pointer;color:var(--text2);transition:all .12s;position:relative}
+.wpo-d:hover{background:var(--surface2);color:var(--text)}
+.wpo-d.in-wk{background:var(--accent-soft);color:var(--accent)}
+.wpo-d.wk-start{background:var(--accent);color:#fff;border-radius:6px 0 0 6px}
+.wpo-d.wk-end{border-radius:0 6px 6px 0}
+.wpo-d.other-m{opacity:.3}
+.wpo-d.is-tod::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--accent)}
+.wpo-close{margin-top:14px;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px;cursor:pointer;transition:all .15s}
+.wpo-close:hover{background:var(--border);color:var(--text)}
+
+/* ── CONFIRM ── */
+.confirm-ov{position:fixed;inset:0;background:rgba(15,16,34,.5);z-index:900;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.confirm-ov.open{display:flex}
+.confirm-box{background:var(--surface);border-radius:14px;padding:24px 28px;width:360px;max-width:95vw;box-shadow:var(--shadow-lg);border:1px solid var(--border2)}
+.confirm-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.confirm-msg{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.confirm-btns{display:flex;justify-content:flex-end;gap:8px}
+.confirm-cancel{background:none;border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;padding:8px 18px;cursor:pointer;transition:all .15s}
+.confirm-cancel:hover{border-color:var(--border2);color:var(--text)}
+.confirm-ok{background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 18px;cursor:pointer;transition:all .15s}
+.confirm-ok:hover{background:#DC2626}
+
+/* ── GOAL MODAL ── */
+.goal-type-selector{display:flex;gap:10px;margin-bottom:16px}
+.goal-type-opt{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;text-align:center;transition:all .18s;background:var(--surface2)}
+.goal-type-opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.gto-icon{font-size:22px;margin-bottom:4px}
+.gto-label{font-size:11px;font-weight:700;color:var(--text)}

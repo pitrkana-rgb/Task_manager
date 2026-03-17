@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowTask — Správce úkolů</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+
+</head>
+
+<body>
+
+<!-- PROFILE SCREEN -->
+<div id="profile-screen">
+  <div class="ps-card">
+    <div class="ps-logo">
+      <div class="ps-logo-icon"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg></div>
+      <div><div class="ps-logo-name">FlowTask</div><div class="ps-logo-sub">Správce úkolů</div></div>
+    </div>
+    <div id="ps-profiles-section">
+      <div class="ps-title">Vítejte zpět</div>
+      <div class="ps-sub">Vyberte profil pro pokračování</div>
+      <div class="ps-profiles" id="ps-profiles-list"></div>
+    </div>
+    <div class="ps-divider"><span>nebo vytvořte nový profil</span></div>
+    <div class="ps-new">
+      <input class="ps-input" id="ps-name" placeholder="Vaše jméno" maxlength="32"/>
+      <div class="ps-colors">
+        <span class="ps-color-label">Barva:</span>
+        <div class="ps-clr sel" style="background:#4F46E5" data-c="#4F46E5" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#10B981" data-c="#10B981" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#F59E0B" data-c="#F59E0B" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#EF4444" data-c="#EF4444" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#8B5CF6" data-c="#8B5CF6" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#EC4899" data-c="#EC4899" onclick="selColor(this)"></div>
+      </div>
+      <button class="ps-btn" onclick="createProfile()">Vytvořit profil a vstoupit</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-brand-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg></div>
+      <div><div class="sb-brand-name">FlowTask</div><div class="sb-brand-sub">Pro</div></div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-group">
+      <div class="sb-group-label">Hlavní</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="goPage('dashboard')"><div class="sb-item-icon">🏠</div>Přehled dne<span class="sb-badge" id="badge-dashboard">0</span></div>
+      <div class="sb-item" id="nav-kanban" onclick="goPage('kanban')"><div class="sb-item-icon">📋</div>Správce úkolů<span class="sb-badge" id="badge-kanban">0</span></div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">Plánování</div>
+      <div class="sb-item" id="nav-weekly" onclick="goPage('weekly')"><div class="sb-item-icon">📅</div>Týdenní plán</div>
+      <div class="sb-item" id="nav-goals" onclick="goPage('goals')"><div class="sb-item-icon">🎯</div>Týdenní výzvy</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">Sledování</div>
+      <div class="sb-item" id="nav-stats" onclick="goPage('stats')"><div class="sb-item-icon">📊</div>Týdenní plnění</div>
+      <div class="sb-item" id="nav-projects" onclick="goPage('projects')"><div class="sb-item-icon">🗂️</div>Projekty</div>
+    </div>
+    <div class="sb-group" id="sb-projects-group" style="display:none">
+      <div class="sb-group-label">Moje projekty</div>
+      <div class="sb-projects-list" id="sb-projects-list"></div>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-profile-btn" onclick="goPage('settings')">
+      <div class="sb-av" id="sb-avatar" style="background:#4F46E5">PK</div>
+      <div><div class="sb-uname" id="sb-uname">Uživatel</div><div class="sb-urole">FlowTask Pro</div></div>
+      <div class="sb-signout" title="Odhlásit" onclick="signOut(event)">⏏</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- DASHBOARD (Přehled dne) -->
+  <div class="page active" id="page-dashboard">
+    <div class="scroll-area">
+      <div class="dash-greeting">
+        <div class="dg-left">
+          <div class="dg-name" id="dg-name">Dobré ráno!</div>
+          <div class="dg-sub" id="dg-sub">Zde je váš dnešní přehled.</div>
+        </div>
+        <div class="dg-right">
+          <div class="dg-date" id="dg-date">—</div>
+          <div class="dg-credit" id="dg-credit">Vytvořil —</div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="stat-card sc-blue"><div class="sc-label">Celkem úkolů</div><div class="sc-value" id="sc-total">0</div><div class="sc-sub">na dnešek</div></div>
+        <div class="stat-card sc-amber"><div class="sc-label">Rozpracováno</div><div class="sc-value" id="sc-inprogress">0</div><div class="sc-sub">dnes</div></div>
+        <div class="stat-card sc-green"><div class="sc-label">Dokončeno</div><div class="sc-value" id="sc-done">0</div><div class="sc-sub">dnes</div></div>
+        <div class="stat-card sc-purple dash-pie-card">
+          <div class="sc-label">Plnění dnes</div>
+          <div class="dash-pie-wrap" id="dash-pie-wrap">
+            <svg class="dash-pie-svg" id="dash-pie-svg" viewBox="0 0 100 100" aria-hidden="true"></svg>
+          </div>
+        </div>
+      </div>
+      <div class="dash-two-col">
+        <div class="dash-col-left">
+          <div class="dash-collapsible">
+            <div class="dash-collapsible-head">
+              <button type="button" class="dash-collapse-btn" id="btn-toggle-today" onclick="toggleDashboardSection('today')" aria-expanded="true" title="Rozbalit / sbalit">▼</button>
+              <div class="section-ttl" style="margin-bottom:0;flex:1">Dnešní úkoly</div>
+              <button class="btn-primary" onclick="openTaskModal('work',null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+            </div>
+            <div class="dash-collapsible-body" id="collapse-today">
+              <div class="today-tasks-list" id="today-tasks-list"><div class="empty-state">Žádné dnešní úkoly</div></div>
+            </div>
+          </div>
+          <div class="dash-collapsible">
+            <div class="dash-collapsible-head">
+              <button type="button" class="dash-collapse-btn" id="btn-toggle-upcoming" onclick="toggleDashboardSection('upcoming')" aria-expanded="true" title="Rozbalit / sbalit">▼</button>
+              <div class="section-ttl" style="margin-bottom:0;flex:1">Nadcházející úkoly</div>
+            </div>
+            <div class="dash-collapsible-body" id="collapse-upcoming">
+              <div class="upcoming-list" id="upcoming-list"><div class="empty-state">Žádné nadcházející termíny</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-col-right">
+          <div class="dash-weekly-goals-card">
+            <div class="section-ttl" style="margin-bottom:12px">Přehled týdenních výzev</div>
+            <div class="dash-wg-list" id="dash-wg-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK MANAGER (kanban) -->
+  <div class="page" id="page-kanban">
+    <div class="scroll-area">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><div class="page-title">Správce úkolů</div></div>
+        <button class="btn-primary" id="kanban-new-btn" onclick="openTaskModal(currentKanbanWS,null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+      </div>
+      <div class="ws-tabs" id="kanban-ws-tabs">
+        <div class="ws-tab active" onclick="setKanbanWS('work',this)">Práce</div>
+        <div class="ws-tab" onclick="setKanbanWS('personal',this)">Osobní</div>
+      </div>
+      <div class="kanban" id="kanban-work-board">
+        <div class="kol" id="k-work-ideas" ondragover="onDragOver(event,'work','ideas')" ondrop="onDrop(event,'work','ideas')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--accent)"></span>Nové úkoly</div><span class="kol-cnt" id="k-cnt-work-ideas">0</span></div>
+          <div class="kol-body" id="k-work-body-ideas"></div>
+        </div>
+        <div class="kol" id="k-work-inprogress" ondragover="onDragOver(event,'work','inprogress')" ondrop="onDrop(event,'work','inprogress')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--amber)"></span>Rozpracováno</div><span class="kol-cnt" id="k-cnt-work-inprogress">0</span></div>
+          <div class="kol-body" id="k-work-body-inprogress"></div>
+        </div>
+        <div class="kol completed-kol" id="k-work-completed" ondragover="onDragOver(event,'work','completed')" ondrop="onDrop(event,'work','completed')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--green)"></span>Splněno</div><span class="kol-cnt" id="k-cnt-work-completed">0</span></div>
+          <div class="kol-body" id="k-work-body-completed"></div>
+        </div>
+      </div>
+      <div class="kanban" id="kanban-personal-board" style="display:none">
+        <div class="kol" id="k-personal-ideas" ondragover="onDragOver(event,'personal','ideas')" ondrop="onDrop(event,'personal','ideas')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--accent)"></span>Nové úkoly</div><span class="kol-cnt" id="k-cnt-personal-ideas">0</span></div>
+          <div class="kol-body" id="k-personal-body-ideas"></div>
+        </div>
+        <div class="kol" id="k-personal-inprogress" ondragover="onDragOver(event,'personal','inprogress')" ondrop="onDrop(event,'personal','inprogress')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--amber)"></span>Rozpracováno</div><span class="kol-cnt" id="k-cnt-personal-inprogress">0</span></div>
+          <div class="kol-body" id="k-personal-body-inprogress"></div>
+        </div>
+        <div class="kol completed-kol" id="k-personal-completed" ondragover="onDragOver(event,'personal','completed')" ondrop="onDrop(event,'personal','completed')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--green)"></span>Splněno</div><span class="kol-cnt" id="k-cnt-personal-completed">0</span></div>
+          <div class="kol-body" id="k-personal-body-completed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY PLANNER -->
+  <div class="page" id="page-weekly">
+    <div class="scroll-area">
+      <div class="page-title">Týdenní plán</div>
+      <div class="wp-header-row">
+        <div class="week-chip-btn" onclick="openWPO()">
+          <span style="font-size:13px;color:var(--text3)">📅</span>
+          <span class="wcb-wn" id="wc-num">Týden —</span>
+          <span class="wcb-range" id="wc-range">vyberte týden</span>
+        </div>
+        <div class="wp-ws-toggle">
+          <div class="wp-wst active" onclick="setWPWS('work',this)">Práce</div>
+          <div class="wp-wst" onclick="setWPWS('personal',this)">Osobní</div>
+          <div class="wp-wst" onclick="setWPWS('both',this)">Vše</div>
+        </div>
+        <button class="btn-secondary" onclick="openTaskModal('work',null)">+ Přidat úkol</button>
+      </div>
+      <div class="week-grid" id="weekly-grid"></div>
+      <div class="sport-section">
+        <div class="sport-header">
+          <div class="sport-title-row">
+            <div class="sport-title sport-title-no-line">Sport &amp; Aktivita</div>
+            <span class="sport-week-label" id="sport-week-label" style="font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)">—</span>
+          </div>
+          <div class="sport-filters" id="sport-filters"></div>
+        </div>
+        <div class="sport-grid" id="sport-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY GOALS -->
+  <div class="page" id="page-goals">
+    <div class="scroll-area">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div><div class="page-title">Týdenní výzvy</div><div class="page-sub" id="goals-week-sub">—</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="goals-week-nav">
+            <button class="wg-nav-btn" onclick="shiftGoalWeek(-1)">‹</button>
+            <span class="wg-curr-label" id="wg-week-label">Týden —</span>
+            <button class="wg-nav-btn" onclick="shiftGoalWeek(1)">›</button>
+          </div>
+          <button class="btn-primary" onclick="openGoalModal()"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nová výzva</button>
+        </div>
+      </div>
+      <div class="goals-grid" id="goals-grid"></div>
+    </div>
+  </div>
+
+  <!-- STATISTICS (Týdenní plnění) -->
+  <div class="page" id="page-stats">
+    <div class="scroll-area">
+      <div class="page-title stats-page-ttl">Týdenní plnění</div>
+      <div class="stats-cards">
+        <div class="stat-card sc-blue"><div class="sc-label">Naplánováno týdnů</div><div class="sc-value" id="st-weeks-planned">0</div><div class="sc-sub">týdnů s plánem</div></div>
+        <div class="stat-card sc-green stat-card-pie"><div class="sc-label">Splněno úkolů</div><div class="st-pie-wrap" id="st-tasks-pie-wrap"><svg class="st-pie-svg" id="st-tasks-pie-svg" viewBox="0 0 100 100"></svg><span class="st-pie-text" id="st-tasks-pie-text">0/0</span></div><div class="sc-sub" id="st-tasks-sub">0%</div></div>
+        <div class="stat-card sc-purple stat-card-pie"><div class="sc-label">Splněno výzev</div><div class="st-pie-wrap" id="st-goals-pie-wrap"><svg class="st-pie-svg" id="st-goals-pie-svg" viewBox="0 0 100 100"></svg><span class="st-pie-text" id="st-goals-pie-text">0%</span></div><div class="sc-sub" id="st-goals-sub">—</div></div>
+      </div>
+      <div class="stats-week-list" id="stats-week-list"></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px 24px;gap:14px;min-height:0">
+      <div><div class="page-title">Projekty</div><div class="page-sub">Pracovní prostor ve stylu OneNote</div></div>
+      <div class="projects-layout">
+        <div class="proj-sidebar">
+          <div class="proj-sb-head"><div class="proj-sb-title">Projekty</div><button class="proj-sb-add" onclick="createProject()">+</button></div>
+          <div class="proj-list" id="proj-list"></div>
+        </div>
+        <div class="proj-main" id="proj-main"><div class="proj-no-selection">← Vyberte projekt pro začátek</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="scroll-area">
+      <div class="page-title">Nastavení</div>
+      <div class="settings-grid">
+        <div class="settings-section">
+          <div class="ss-title">Profily</div>
+          <div class="profile-list" id="settings-profile-list"></div>
+        </div>
+        <div class="settings-section">
+          <div class="ss-title">Správa dat</div>
+          <button class="settings-btn" onclick="exportData()">📤 Exportovat data (JSON)</button>
+          <button class="settings-btn" onclick="document.getElementById('import-file').click()">📥 Importovat data (JSON)</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+          <button class="settings-btn danger" onclick="confirmReset()">🗑️ Smazat všechna data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK PICKER -->
+<div class="wpo-ov" id="wpo-overlay" onclick="closeWPOOut(event)">
+  <div class="wpo-box">
+    <div class="wpo-head"><span class="wpo-mlabel" id="wpo-mlabel">—</span><div class="wpo-nav"><button class="wpo-nbtn" onclick="wpoNav(-1)">‹</button><button class="wpo-nbtn" onclick="wpoNav(1)">›</button></div></div>
+    <div class="wpo-grid" id="wpo-grid"></div>
+    <button class="wpo-close" onclick="closeWPO()">Zavřít</button>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-ov" id="task-modal-ov" onclick="closeTaskModalOut(event)">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-ttl" id="task-modal-title">Nový úkol</div><button class="modal-x" onclick="closeTaskModal()">✕</button></div>
+    <div class="field"><label class="flabel">Název</label><input class="finput" id="tm-title" placeholder="Co je potřeba udělat?"/></div>
+    <div class="frow">
+      <div class="field"><label class="flabel">Priorita</label><select class="fselect" id="tm-priority"><option value="medium">Střední</option><option value="high">Vysoká</option><option value="low">Nízká</option></select></div>
+      <div class="field"><label class="flabel">Oblast</label><select class="fselect" id="tm-ws"><option value="work">Práce</option><option value="personal">Osobní</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label class="flabel">Termín <span style="font-weight:400;text-transform:none;font-size:9px;letter-spacing:0;color:var(--text3)">— volitelný</span></label><input type="date" class="fdate" id="tm-date"/></div>
+      <div class="field"><label class="flabel">Stav</label><select class="fselect" id="tm-status"><option value="ideas">Nové úkoly</option><option value="inprogress">Rozpracováno</option><option value="completed">Splněno</option></select></div>
+    </div>
+    <div class="field"><label class="flabel">Opakování</label>
+      <div class="recur-opts">
+        <div class="recur-chip sel" data-v="none" onclick="selRecur(this)">Žádné</div>
+        <div class="recur-chip" data-v="daily" onclick="selRecur(this)">Denně</div>
+        <div class="recur-chip" data-v="weekly" onclick="selRecur(this)">Týdně</div>
+        <div class="recur-chip" data-v="weekdays" onclick="selRecur(this)">Pracovní dny</div>
+        <div class="recur-chip" data-v="monthly" onclick="selRecur(this)">Měsíčně</div>
+      </div>
+    </div>
+    <div class="field"><label class="flabel">Kontrolní seznam</label>
+      <div class="bullet-list" id="tm-bullets"></div>
+      <div class="b-add-row"><input class="b-inp" id="tm-bi" placeholder="Přidat položku..."/><button class="b-add-btn" onclick="addBullet()">+ Přidat</button></div>
+    </div>
+    <div class="field"><label class="flabel">Poznámky</label><textarea class="ftextarea" id="tm-notes" placeholder="Volitelné poznámky..."></textarea></div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeTaskModal()">Zrušit</button><button class="btn-save" id="tm-save-btn" onclick="saveTask()">Přidat úkol</button></div>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-ov" id="goal-modal-ov" onclick="closeGoalModalOut(event)">
+  <div class="modal" style="width:500px">
+    <div class="modal-hdr"><div class="modal-ttl">Nový týdenní cíl</div><button class="modal-x" onclick="closeGoalModal()">✕</button></div>
+    <div class="field">
+      <label class="flabel">Typ cíle</label>
+      <div class="goal-type-selector">
+        <div class="goal-type-opt sel" id="gto-habit" onclick="selGoalType('habit')">
+          <div class="gto-icon">✅</div><div class="gto-label">Návyk / Zvyk</div><div class="gto-sub">Denní zaškrtávání</div>
+        </div>
+        <div class="goal-type-opt" id="gto-numeric" onclick="selGoalType('numeric')">
+          <div class="gto-icon">🔢</div><div class="gto-label">Numerický cíl</div><div class="gto-sub">Zadávání čísel denně</div>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label class="flabel">Název cíle</label><input class="finput" id="gm-title" placeholder="např. Vstát v 5:00, 1000 kliků..."/></div>
+    <div class="field" id="gm-target-field" style="display:none"><label class="flabel">Cílová hodnota</label><input type="number" class="finput" id="gm-target" placeholder="např. 1000"/></div>
+    <div class="field" id="gm-unit-field" style="display:none"><label class="flabel">Jednotka</label><input class="finput" id="gm-unit" placeholder="např. kliky, km, minuty..."/></div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeGoalModal()">Zrušit</button><button class="btn-save" onclick="saveGoal()">Vytvořit cíl</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-ov" id="confirm-ov">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Potvrdit</div>
+    <div class="confirm-msg" id="confirm-msg">Jste si jistí?</div>
+    <div class="confirm-btns"><button class="confirm-cancel" onclick="closeConfirm()">Zrušit</button><button class="confirm-ok" id="confirm-ok-btn">Potvrdit</button></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

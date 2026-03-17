@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowTask — Správce úkolů</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F6FB;--surface:#FFFFFF;--surface2:#F8F9FD;--surface3:#EEF0F8;
+  --border:#E4E7F2;--border2:#D0D4E8;
+  --text:#0F1022;--text2:#5B6080;--text3:#9AA0BC;
+  --accent:#4F46E5;--accent2:#6366F1;--accent-soft:rgba(79,70,229,0.08);--accent-glow:rgba(79,70,229,0.18);
+  --green:#10B981;--green-soft:rgba(16,185,129,0.1);
+  --amber:#F59E0B;--amber-soft:rgba(245,158,11,0.1);
+  --red:#EF4444;--red-soft:rgba(239,68,68,0.09);
+  --purple:#8B5CF6;--purple-soft:rgba(139,92,246,0.1);
+  --blue:#3B82F6;--blue-soft:rgba(59,130,246,0.1);
+  --shadow-sm:0 1px 3px rgba(15,16,34,0.06),0 1px 2px rgba(15,16,34,0.04);
+  --shadow:0 2px 8px rgba(15,16,34,0.07),0 4px 20px rgba(15,16,34,0.04);
+  --shadow-lg:0 8px 32px rgba(15,16,34,0.12),0 2px 8px rgba(15,16,34,0.06);
+  --r:14px;--rs:9px;--rxs:6px;--nav:220px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex}
+input,select,textarea,button{font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ── PROFILE SCREEN ── */
+#profile-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.ps-card{background:var(--surface);border-radius:20px;padding:40px;width:440px;max-width:95vw;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.ps-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.ps-logo-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(79,70,229,0.35)}
+.ps-logo-icon svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+.ps-logo-name{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.ps-logo-sub{font-size:11px;color:var(--text3);font-weight:500}
+.ps-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ps-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.ps-profiles{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.ps-profile-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s}
+.ps-profile-item:hover{border-color:var(--accent);background:var(--accent-soft)}
+.ps-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.ps-pname{font-size:13px;font-weight:600;color:var(--text)}
+.ps-prole{font-size:11px;color:var(--text3)}
+.ps-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.ps-divider::before,.ps-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.ps-divider span{font-size:11px;color:var(--text3);font-weight:500}
+.ps-new{display:flex;flex-direction:column;gap:10px}
+.ps-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s}
+.ps-input:focus{border-color:var(--accent)}
+.ps-input::placeholder{color:var(--text3)}
+.ps-colors{display:flex;gap:8px;align-items:center}
+.ps-color-label{font-size:11px;color:var(--text3);font-weight:500}
+.ps-clr{width:24px;height:24px;border-radius:50%;cursor:pointer;transition:transform .15s;border:2px solid transparent}
+.ps-clr.sel,.ps-clr:hover{transform:scale(1.2);border-color:var(--text)}
+.ps-btn{width:100%;background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em;padding:11px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(79,70,229,.3)}
+.ps-btn:hover{background:#4338CA;box-shadow:0 4px 20px rgba(79,70,229,.45)}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--nav);flex-shrink:0;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-brand{display:flex;align-items:center;gap:10px}
+.sb-brand-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,.3)}
+.sb-brand-icon svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.sb-brand-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em}
+.sb-brand-sub{font-size:9px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.sb-nav{flex:1;overflow-y:auto;padding:12px 10px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-group{margin-bottom:20px}
+.sb-group-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:1px;font-size:12px;font-weight:500;color:var(--text2)}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sb-item-icon{width:26px;height:26px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:all .15s}
+.sb-item.active .sb-item-icon{background:var(--accent);border-color:var(--accent)}
+.sb-badge{margin-left:auto;font-size:9px;font-family:'Fira Code',monospace;background:var(--surface3);color:var(--text2);padding:1px 7px;border-radius:20px;border:1px solid var(--border)}
+.sb-item.active .sb-badge{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sb-projects-list{padding:0 8px}
+.sb-proj-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:1px}
+.sb-proj-item:hover{background:var(--surface2);color:var(--text)}
+.sb-proj-item.active{color:var(--accent);background:var(--accent-soft)}
+.sb-proj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-bottom{padding:12px 10px;border-top:1px solid var(--border);flex-shrink:0}
+.sb-profile-btn{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .15s;width:100%}
+.sb-profile-btn:hover{background:var(--surface2)}
+.sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:var(--text)}
+.sb-urole{font-size:10px;color:var(--text3)}
+.sb-signout{margin-left:auto;font-size:11px;color:var(--text3);cursor:pointer;transition:color .15s}
+.sb-signout:hover{color:var(--red)}
+
+/* ── MAIN ── */
+#app{display:none;flex:1;flex-direction:column;overflow:hidden;min-width:0}
+#app.show{display:flex}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0}
+.tb-crumb{font-size:11px;color:var(--text3);font-family:'Fira Code',monospace;display:flex;align-items:center;gap:6px}
+.tb-crumb span{color:var(--text2)}
+.tb-crumb .sep{color:var(--border2)}
+.tb-spacer{flex:1}
+.tb-date{font-size:11px;font-family:'Fira Code',monospace;color:var(--text2);text-align:right}
+.tb-credit{font-size:9px;color:var(--text3);letter-spacing:.05em;text-align:right}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+.page.active{display:flex}
+.scroll-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+/* ── COMMON ── */
+.page-title{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.page-sub{font-size:11px;color:var(--text3);font-family:'Fira Code',monospace;margin-top:3px}
+.section-ttl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section-ttl::before{content:'';width:14px;height:2px;background:var(--accent);border-radius:2px;display:inline-block}
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow-sm);padding:18px 20px}
+.pbadge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.07em;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.p-high{background:var(--red-soft);color:var(--red)}
+.p-medium{background:var(--amber-soft);color:var(--amber)}
+.p-low{background:var(--green-soft);color:var(--green)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:all .2s;box-shadow:0 2px 10px rgba(79,70,229,.25)}
+.btn-primary:hover{background:#4338CA;box-shadow:0 4px 18px rgba(79,70,229,.4);transform:translateY(-1px)}
+.btn-primary svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:600;letter-spacing:.04em;padding:6px 14px;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(15,16,34,.5);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;padding:28px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border2);scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-ttl{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.modal-x{background:none;border:none;cursor:pointer;color:var(--text3);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.modal-x:hover{background:var(--surface2);color:var(--text)}
+.field{margin-bottom:15px}
+.flabel{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block}
+.finput,.fselect,.fdate,.ftextarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;padding:10px 13px;outline:none;transition:border-color .2s}
+.finput:focus,.fdate:focus,.ftextarea:focus{border-color:var(--accent)}
+.finput::placeholder,.ftextarea::placeholder{color:var(--text3)}
+.fselect{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239AA0BC' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+.fdate{font-family:'Fira Code',monospace;font-size:12px;color-scheme:light}
+.ftextarea{resize:vertical;min-height:72px;line-height:1.6}
+.frow{display:flex;gap:10px}
+.frow .field{flex:1}
+.bullet-list{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;min-height:4px}
+.b-item{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);padding:7px 12px}
+.b-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.b-text{flex:1;font-size:12px;color:var(--text)}
+.b-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;transition:color .15s;line-height:1;padding:0 2px}
+.b-del:hover{color:var(--red)}
+.b-add-row{display:flex;gap:7px}
+.b-inp{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s}
+.b-inp:focus{border-color:var(--border2)}
+.b-inp::placeholder{color:var(--text3)}
+.b-add-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:700;padding:8px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.b-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.recur-opts{display:flex;gap:7px;flex-wrap:wrap}
+.recur-chip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;background:var(--surface2)}
+.recur-chip.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.btn-cancel{background:none;border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:9px 20px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-save{background:var(--accent);border:none;border-radius:var(--rs);color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:9px 22px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(79,70,229,.28)}
+.btn-save:hover{background:#4338CA;box-shadow:0 4px 20px rgba(79,70,229,.4);transform:translateY(-1px)}
+
+/* ── DASHBOARD ── */
+.dash-greeting{background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);border-radius:var(--r);padding:22px 26px;color:#fff;position:relative;overflow:hidden}
+.dash-greeting::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+.dash-greeting::before{content:'';position:absolute;right:60px;bottom:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.dg-time{font-size:11px;font-family:'Fira Code',monospace;opacity:.75;letter-spacing:.06em;margin-bottom:4px}
+.dg-name{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+.dg-sub{font-size:12px;opacity:.8}
+.dg-streak{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border-radius:20px;padding:4px 12px;margin-top:12px;font-size:12px;font-weight:600}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.sc-blue::before{background:var(--accent)}
+.sc-green::before{background:var(--green)}
+.sc-amber::before{background:var(--amber)}
+.sc-purple::before{background:var(--purple)}
+.sc-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.sc-value{font-size:30px;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1;font-family:'Fira Code',monospace}
+.sc-sub{font-size:10px;color:var(--text3);margin-top:4px;font-family:'Fira Code',monospace}
+
+/* completion overview bar */
+.completion-overview{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm)}
+.co-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.co-title{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.co-title::before{content:'';width:14px;height:2px;background:var(--accent);border-radius:2px}
+.co-pct{font-size:22px;font-weight:800;color:var(--accent);font-family:'Fira Code',monospace}
+.co-bars{display:flex;gap:3px;height:28px;align-items:flex-end;margin-bottom:10px}
+.co-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.co-bar{width:100%;border-radius:3px 3px 0 0;background:var(--accent);min-height:2px;transition:height .5s cubic-bezier(.4,0,.2,1);opacity:.85}
+.co-bar:hover{opacity:1}
+.co-bar-lbl{font-size:8px;font-family:'Fira Code',monospace;color:var(--text3)}
+.co-track{height:8px;background:var(--surface3);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.co-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .6s cubic-bezier(.4,0,.2,1)}
+.co-labels{display:flex;justify-content:space-between;margin-top:6px}
+.co-lbl{font-size:9px;font-family:'Fira Code',monospace;color:var(--text3)}
+
+/* today tasks */
+.today-tasks-list{display:flex;flex-direction:column;gap:8px;margin-top:0}
+.today-task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm);transition:all .18s;position:relative;overflow:hidden}
+.today-task-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.today-task-item.p-high-t::before{background:var(--red)}
+.today-task-item.p-medium-t::before{background:var(--amber)}
+.today-task-item.p-low-t::before{background:var(--green)}
+.today-task-item:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateX(2px)}
+.tti-check{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;transition:all .15s;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.tti-check.done{background:var(--green);border-color:var(--green)}
+.tti-check.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.tti-title{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.tti-title.done{text-decoration:line-through;color:var(--text3)}
+.tti-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.tti-recur{font-size:9px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;font-weight:600}
+.tti-ws{font-size:9px;font-family:'Fira Code',monospace;color:var(--text3)}
+.empty-state{text-align:center;padding:24px 16px;color:var(--text3);font-size:12px;font-family:'Fira Code',monospace}
+
+/* upcoming */
+.upcoming-list{display:flex;flex-direction:column;gap:7px}
+.up-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;font-size:11px;transition:all .15s}
+.up-item:hover{border-color:var(--border2);background:var(--surface)}
+.up-date{font-family:'Fira Code',monospace;color:var(--text3);font-size:10px;white-space:nowrap;min-width:72px}
+.up-title{flex:1;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── TASK MANAGER (kanban) ── */
+.ws-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.ws-tab{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid var(--border);color:var(--text2);background:var(--surface)}
+.ws-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(79,70,229,.25)}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kol{background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 260px)}
+.kol-head{padding:12px 14px 10px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.kol-name{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
+.kol-dot{width:7px;height:7px;border-radius:50%}
+.kol-cnt{font-size:10px;font-family:'Fira Code',monospace;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:20px}
+.kol-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.kol-body.drag-over{background:var(--accent-soft);border-radius:8px}
+.task-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:12px 14px;cursor:grab;transition:all .18s;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.task-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.task-card.ph::before{background:var(--red)}
+.task-card.pm::before{background:var(--amber)}
+.task-card.pl::before{background:var(--green)}
+.task-card:hover{box-shadow:var(--shadow);transform:translateY(-2px);border-color:var(--border2)}
+.task-card.dragging{opacity:.3;transform:scale(.97)}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tc-title{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.tc-title.done{text-decoration:line-through;color:var(--text3)}
+.tc-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.task-card:hover .tc-actions{opacity:1}
+.tact{background:none;border:none;cursor:pointer;color:var(--text3);width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.tact:hover{background:var(--surface2)}
+.tact.edit:hover{color:var(--accent)}
+.tact.done-btn:hover{color:var(--green)}
+.tact.del:hover{color:var(--red);background:var(--red-soft)}
+.tc-meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tc-date{font-size:9px;font-family:'Fira Code',monospace;color:var(--text2);background:var(--surface2);padding:2px 7px;border-radius:20px;border:1px solid var(--border)}
+.tc-date.overdue{color:var(--red);background:var(--red-soft)}
+.tc-recur{font-size:9px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;font-weight:600}
+.cl-wrap{margin-top:9px}
+.cli-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);margin-bottom:3px}
+.cli-item input{width:12px;height:12px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.cli-item span.ck{text-decoration:line-through;color:var(--text3)}
+.cl-track{margin-top:7px;height:4px;background:var(--surface2);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.cl-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .4s cubic-bezier(.4,0,.2,1)}
+.completed-kol .task-card{opacity:.5}
+
+/* ── WEEKLY PLANNER ── */
+.wp-header-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.week-chip-btn{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:7px 16px;cursor:pointer;transition:all .18s;box-shadow:var(--shadow-sm)}
+.week-chip-btn:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(79,70,229,.12)}
+.wcb-wn{font-size:11px;font-family:'Fira Code',monospace;color:var(--accent);font-weight:500}
+.wcb-range{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)}
+.wp-ws-toggle{display:flex;gap:6px}
+.wp-wst{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--text2);background:var(--surface);transition:all .15s}
+.wp-wst.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.wk-col{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.wk-col.today-col{border-color:rgba(79,70,229,.3);background:rgba(79,70,229,.015)}
+.wk-col:hover{box-shadow:var(--shadow)}
+.wk-col-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.wk-dayname{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.wk-col.today-col .wk-dayname{color:var(--accent)}
+.wk-datenum{font-size:22px;font-weight:800;color:var(--text);font-family:'Fira Code',monospace;letter-spacing:-.02em;margin-top:2px}
+.wk-col.today-col .wk-datenum{color:var(--accent)}
+.wk-mon{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3);margin-top:1px}
+.wk-col-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:80px;overflow-y:auto;scrollbar-width:thin}
+.wk-task{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;position:relative;overflow:hidden;transition:all .15s;cursor:pointer}
+.wk-task:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.wk-task::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.wk-task.p-high::before{background:var(--red)}
+.wk-task.p-medium::before{background:var(--amber)}
+.wk-task.p-low::before{background:var(--green)}
+.wk-task-title{font-size:11px;font-weight:600;color:var(--text);padding-left:5px;margin-bottom:3px;line-height:1.3}
+.wk-empty{font-size:10px;font-family:'Fira Code',monospace;color:var(--text3);text-align:center;padding:16px 0}
+
+/* sport tracker */
+.sport-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px 18px;box-shadow:var(--shadow-sm)}
+.sport-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.sport-title-row{display:flex;align-items:center;gap:10px}
+.sport-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.sport-title::before{content:'';width:14px;height:2px;background:var(--green);border-radius:2px}
+.sport-filters{display:flex;gap:6px;flex-wrap:wrap}
+.sport-filter-chip{padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);font-size:10px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;background:var(--surface2)}
+.sport-filter-chip.active{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.sport-grid{display:grid;gap:7px 10px;align-items:center}
+.sport-act-name{font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.sport-act-icon{font-size:16px}
+.sport-toggle{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--surface2);margin:0 auto}
+.sport-toggle.done{background:var(--green-soft);border-color:var(--green)}
+.sport-toggle.done::after{content:'✓';font-size:13px;color:var(--green);font-weight:700}
+.sport-toggle:not(.done){color:transparent}
+.sport-col-head{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);text-align:center}
+
+/* ── WEEKLY GOALS ── */
+.goals-week-nav{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px 8px;box-shadow:var(--shadow-sm)}
+.wg-nav-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wg-nav-btn:hover{background:var(--surface2);color:var(--text)}
+.wg-curr-label{font-size:12px;font-weight:600;color:var(--text);font-family:'Fira Code',monospace;min-width:70px;text-align:center}
+.goals-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+/* goal card */
+.goal-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm);transition:all .2s;display:flex;flex-direction:column;gap:0}
+.goal-card:hover{box-shadow:var(--shadow)}
+.gc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.gc-title{font-size:14px;font-weight:700;color:var(--text);flex:1;line-height:1.3}
+.gc-type-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.gc-type-habit{background:var(--purple-soft);color:var(--purple)}
+.gc-type-numeric{background:var(--blue-soft);color:var(--blue)}
+.gc-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.gc-del:hover{color:var(--red);background:var(--red-soft)}
+/* progress bar */
+.gc-progress-wrap{margin-bottom:12px}
+.gc-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.gc-track{flex:1;height:8px;background:var(--surface3);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.gc-fill{height:100%;border-radius:20px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.gc-pct-label{font-size:12px;font-family:'Fira Code',monospace;font-weight:600;min-width:40px;text-align:right}
+.gc-stats-row{display:flex;gap:14px}
+.gc-stat{display:flex;flex-direction:column;gap:2px}
+.gc-stat-val{font-size:16px;font-weight:800;color:var(--text);font-family:'Fira Code',monospace;letter-spacing:-.02em}
+.gc-stat-lbl{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+/* habit: day checkboxes */
+.gc-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:0}
+.gc-day-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gc-day-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.gc-day-cb{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:all .18s;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:0}
+.gc-day-cb.checked{background:var(--accent-soft);border-color:var(--accent)}
+.gc-day-cb.checked::after{content:'✓';font-size:13px;color:var(--accent);font-weight:700}
+.gc-day-cb:hover:not(.checked){background:var(--surface3);border-color:var(--border2)}
+/* numeric: day inputs */
+.gc-numeric-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.gc-num-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gc-num-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.gc-num-inp{width:100%;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-family:'Fira Code',monospace;font-size:12px;font-weight:500;padding:5px 3px;text-align:center;outline:none;transition:border-color .15s}
+.gc-num-inp:focus{border-color:var(--accent)}
+/* add goal */
+.add-goal-card{background:var(--surface2);border-radius:var(--r);border:2px dashed var(--border2);padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;min-height:140px}
+.add-goal-card:hover{border-color:var(--accent);background:var(--accent-soft)}
+.add-goal-icon{font-size:28px;opacity:.4}
+.add-goal-label{font-size:12px;color:var(--text3);font-weight:500}
+
+/* ── STATISTICS ── */
+.stats-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.completion-chart{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow-sm)}
+.chart-bars{display:flex;align-items:flex-end;gap:5px;height:80px;margin-top:12px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);transition:height .4s cubic-bezier(.4,0,.2,1);min-height:2px;opacity:.85}
+.chart-bar:hover{opacity:1}
+.chart-bar-lbl{font-size:8px;font-family:'Fira Code',monospace;color:var(--text3)}
+.heatmap-wrap{overflow-x:auto;padding-bottom:4px}
+.heatmap{display:flex;flex-direction:column;gap:3px}
+.hm-row{display:flex;gap:3px;align-items:center}
+.hm-label{font-size:9px;font-family:'Fira Code',monospace;color:var(--text3);width:22px;text-align:right;flex-shrink:0}
+.hm-cell{width:14px;height:14px;border-radius:3px;flex-shrink:0;cursor:pointer;transition:transform .15s;background:var(--surface3);border:1px solid var(--border)}
+.hm-cell:hover{transform:scale(1.3)}
+.hm-cell.l1{background:#c7d2fe;border-color:#a5b4fc}
+.hm-cell.l2{background:#818cf8;border-color:#6366f1}
+.hm-cell.l3{background:#4f46e5;border-color:#4338ca}
+.hm-cell.l4{background:#3730a3;border-color:#312e81}
+.hm-legend{display:flex;align-items:center;gap:6px;margin-top:6px}
+.hm-legend-label{font-size:9px;font-family:'Fira Code',monospace;color:var(--text3)}
+.hm-legend-cells{display:flex;gap:3px}
+
+/* ── PROJECTS ── */
+.projects-layout{display:flex;flex:1;min-height:0;background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-sm)}
+.proj-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface2)}
+.proj-sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.proj-sb-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.proj-sb-add{background:var(--accent);border:none;border-radius:6px;color:#fff;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .15s}
+.proj-sb-add:hover{background:#4338CA}
+.proj-list{flex:1;overflow-y:auto;padding:8px;scrollbar-width:thin}
+.proj-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:2px;font-size:12px;font-weight:500;color:var(--text2)}
+.proj-list-item:hover{background:var(--surface);color:var(--text)}
+.proj-list-item.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.proj-list-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proj-list-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-list-item:hover .proj-list-del{color:var(--text3)}
+.proj-list-del:hover{color:var(--red)!important}
+.proj-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.proj-main-head{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px}
+.proj-main-title{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.02em;background:none;border:none;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.proj-main-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.proj-no-selection{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--text3);font-family:'Fira Code',monospace;font-size:12px}
+.proj-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.proj-sect-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.proj-sect-title{font-size:12px;font-weight:700;color:var(--text);flex:1;background:none;border:none;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.proj-sect-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;transition:color .15s}
+.proj-sect-del:hover{color:var(--red)}
+.proj-sect-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.proj-notes{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s;line-height:1.6}
+.proj-notes:focus{border-color:var(--accent)}
+.proj-task-list{display:flex;flex-direction:column;gap:5px}
+.proj-task-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;transition:all .15s}
+.proj-task-item:hover{border-color:var(--border2)}
+.proj-task-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-task-item:hover .proj-task-del{color:var(--text3)}
+.proj-task-del:hover{color:var(--red)!important}
+.proj-link-list,.proj-file-list{display:flex;flex-direction:column;gap:5px}
+.proj-link-item,.proj-file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:12px;transition:all .15s}
+.proj-link-item:hover,.proj-file-item:hover{border-color:var(--border2)}
+.proj-link-del,.proj-file-del{background:none;border:none;color:transparent;cursor:pointer;font-size:11px;transition:color .15s}
+.proj-link-item:hover .proj-link-del,.proj-file-item:hover .proj-file-del{color:var(--text3)}
+.proj-link-del:hover,.proj-file-del:hover{color:var(--red)!important}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.settings-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow-sm)}
+.ss-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px}
+.profile-list{display:flex;flex-direction:column;gap:8px}
+.profile-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;transition:all .15s}
+.profile-item.current{border-color:var(--accent);background:var(--accent-soft)}
+.pi-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pi-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.pi-switch{font-size:10px;color:var(--accent);cursor:pointer;font-weight:600}
+.pi-switch:hover{text-decoration:underline}
+.pi-del{color:var(--red);cursor:pointer;font-size:11px;background:none;border:none}
+.settings-btn{width:100%;padding:10px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:8px}
+.settings-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface2)}
+.settings-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+
+/* ── WEEK PICKER ── */
+.wpo-ov{position:fixed;inset:0;background:rgba(15,16,34,.4);z-index:700;display:none;align-items:flex-start;justify-content:flex-start;padding:80px 0 0 calc(var(--nav) + 24px);backdrop-filter:blur(3px)}
+.wpo-ov.open{display:flex}
+.wpo-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px;min-width:270px;box-shadow:var(--shadow-lg)}
+.wpo-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.wpo-mlabel{font-size:13px;font-weight:700;color:var(--text)}
+.wpo-nav{display:flex;gap:4px}
+.wpo-nbtn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;padding:4px 11px;cursor:pointer;transition:all .15s}
+.wpo-nbtn:hover{background:var(--border);color:var(--text)}
+.wpo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.wpo-dow{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:3px 0 7px}
+.wpo-d{font-size:11px;font-family:'Fira Code',monospace;padding:6px 3px;border-radius:5px;cursor:pointer;color:var(--text2);transition:all .12s;position:relative}
+.wpo-d:hover{background:var(--surface2);color:var(--text)}
+.wpo-d.in-wk{background:var(--accent-soft);color:var(--accent)}
+.wpo-d.wk-start{background:var(--accent);color:#fff;border-radius:6px 0 0 6px}
+.wpo-d.wk-end{border-radius:0 6px 6px 0}
+.wpo-d.other-m{opacity:.3}
+.wpo-d.is-tod::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--accent)}
+.wpo-close{margin-top:14px;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px;cursor:pointer;transition:all .15s}
+.wpo-close:hover{background:var(--border);color:var(--text)}
+
+/* ── CONFIRM ── */
+.confirm-ov{position:fixed;inset:0;background:rgba(15,16,34,.5);z-index:900;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.confirm-ov.open{display:flex}
+.confirm-box{background:var(--surface);border-radius:14px;padding:24px 28px;width:360px;max-width:95vw;box-shadow:var(--shadow-lg);border:1px solid var(--border2)}
+.confirm-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.confirm-msg{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.confirm-btns{display:flex;justify-content:flex-end;gap:8px}
+.confirm-cancel{background:none;border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;padding:8px 18px;cursor:pointer;transition:all .15s}
+.confirm-cancel:hover{border-color:var(--border2);color:var(--text)}
+.confirm-ok{background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 18px;cursor:pointer;transition:all .15s}
+.confirm-ok:hover{background:#DC2626}
+
+/* ── GOAL MODAL ── */
+.goal-type-selector{display:flex;gap:10px;margin-bottom:16px}
+.goal-type-opt{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;text-align:center;transition:all .18s;background:var(--surface2)}
+.goal-type-opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.gto-icon{font-size:22px;margin-bottom:4px}
+.gto-label{font-size:11px;font-weight:700;color:var(--text)}
+.gto-sub{font-size:10px;color:var(--text3);margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- PROFILE SCREEN -->
+<div id="profile-screen">
+  <div class="ps-card">
+    <div class="ps-logo">
+      <div class="ps-logo-icon"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="2"/><rect x="11" y="2" width="7" height="7" rx="2"/><rect x="2" y="11" width="7" height="7" rx="2"/><rect x="11" y="11" width="7" height="7" rx="2"/></svg></div>
+      <div><div class="ps-logo-name">FlowTask</div><div class="ps-logo-sub">Správce úkolů</div></div>
+    </div>
+    <div id="ps-profiles-section">
+      <div class="ps-title">Vítejte zpět</div>
+      <div class="ps-sub">Vyberte profil pro pokračování</div>
+      <div class="ps-profiles" id="ps-profiles-list"></div>
+    </div>
+    <div class="ps-divider"><span>nebo vytvořte nový profil</span></div>
+    <div class="ps-new">
+      <input class="ps-input" id="ps-name" placeholder="Vaše jméno" maxlength="32"/>
+      <div class="ps-colors">
+        <span class="ps-color-label">Barva:</span>
+        <div class="ps-clr sel" style="background:#4F46E5" data-c="#4F46E5" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#10B981" data-c="#10B981" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#F59E0B" data-c="#F59E0B" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#EF4444" data-c="#EF4444" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#8B5CF6" data-c="#8B5CF6" onclick="selColor(this)"></div>
+        <div class="ps-clr" style="background:#EC4899" data-c="#EC4899" onclick="selColor(this)"></div>
+      </div>
+      <button class="ps-btn" onclick="createProfile()">Vytvořit profil a vstoupit</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-brand-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg></div>
+      <div><div class="sb-brand-name">FlowTask</div><div class="sb-brand-sub">Pro</div></div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-group">
+      <div class="sb-group-label">Hlavní</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="goPage('dashboard')"><div class="sb-item-icon">🏠</div>Přehled<span class="sb-badge" id="badge-dashboard">0</span></div>
+      <div class="sb-item" id="nav-kanban" onclick="goPage('kanban')"><div class="sb-item-icon">📋</div>Správce úkolů<span class="sb-badge" id="badge-kanban">0</span></div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">Plánování</div>
+      <div class="sb-item" id="nav-weekly" onclick="goPage('weekly')"><div class="sb-item-icon">📅</div>Týdenní plán</div>
+      <div class="sb-item" id="nav-goals" onclick="goPage('goals')"><div class="sb-item-icon">🎯</div>Týdenní cíle</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">Sledování</div>
+      <div class="sb-item" id="nav-stats" onclick="goPage('stats')"><div class="sb-item-icon">📊</div>Statistiky</div>
+      <div class="sb-item" id="nav-projects" onclick="goPage('projects')"><div class="sb-item-icon">🗂️</div>Projekty</div>
+    </div>
+    <div class="sb-group" id="sb-projects-group" style="display:none">
+      <div class="sb-group-label">Moje projekty</div>
+      <div class="sb-projects-list" id="sb-projects-list"></div>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-profile-btn" onclick="goPage('settings')">
+      <div class="sb-av" id="sb-avatar" style="background:#4F46E5">PK</div>
+      <div><div class="sb-uname" id="sb-uname">Uživatel</div><div class="sb-urole">FlowTask Pro</div></div>
+      <div class="sb-signout" title="Odhlásit" onclick="signOut(event)">⏏</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-crumb"><span id="tb-crumb1">Přehled</span><span class="sep">›</span><span id="tb-crumb2" style="color:var(--text3)">Celkový přehled</span></div>
+    <div class="tb-spacer"></div>
+    <div><div class="tb-date" id="tb-date">—</div><div class="tb-credit">Vytvořil Petr Kaňa</div></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="scroll-area">
+      <div class="dash-greeting">
+        <div class="dg-time" id="dg-time">—</div>
+        <div class="dg-name" id="dg-name">Dobré ráno!</div>
+        <div class="dg-sub" id="dg-sub">Zde je váš dnešní přehled.</div>
+        <div class="dg-streak">🔥 <span id="dg-streak-num">0</span> dní v řadě</div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="dash-grid">
+        <div class="stat-card sc-blue"><div class="sc-label">Celkem úkolů</div><div class="sc-value" id="sc-total">0</div><div class="sc-sub">všechny oblasti</div></div>
+        <div class="stat-card sc-green"><div class="sc-label">Splněno</div><div class="sc-value" id="sc-done">0</div><div class="sc-sub">celkem</div></div>
+        <div class="stat-card sc-amber"><div class="sc-label">Dnes</div><div class="sc-value" id="sc-today">0</div><div class="sc-sub">vyžaduje pozornost</div></div>
+        <div class="stat-card sc-purple"><div class="sc-label">Série</div><div class="sc-value" id="sc-streak">0</div><div class="sc-sub">aktivních dní</div></div>
+      </div>
+
+      <!-- COMPLETION OVERVIEW -->
+      <div class="completion-overview">
+        <div class="co-header">
+          <div class="co-title">Celkové plnění</div>
+          <div class="co-pct" id="co-pct">0%</div>
+        </div>
+        <div class="co-bars" id="co-bars"></div>
+        <div class="co-track"><div class="co-fill" id="co-fill" style="width:0%"></div></div>
+        <div class="co-labels">
+          <span class="co-lbl" id="co-done-lbl">0 splněno</span>
+          <span class="co-lbl" id="co-total-lbl">0 celkem</span>
+        </div>
+      </div>
+
+      <!-- TODAY TASKS (full width) -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-ttl" style="margin-bottom:0">Dnešní úkoly</div>
+          <button class="btn-primary" onclick="openTaskModal('work',null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+        </div>
+        <div class="today-tasks-list" id="today-tasks-list"><div class="empty-state">Žádné dnešní úkoly</div></div>
+      </div>
+
+      <!-- UPCOMING TASKS -->
+      <div>
+        <div class="section-ttl">Nadcházející úkoly</div>
+        <div class="upcoming-list" id="upcoming-list"><div class="empty-state">Žádné nadcházející termíny</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK MANAGER (kanban) -->
+  <div class="page" id="page-kanban">
+    <div class="scroll-area">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><div class="page-title">Správce úkolů</div></div>
+        <button class="btn-primary" id="kanban-new-btn" onclick="openTaskModal(currentKanbanWS,null)"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový úkol</button>
+      </div>
+      <div class="ws-tabs" id="kanban-ws-tabs">
+        <div class="ws-tab active" onclick="setKanbanWS('work',this)">Práce</div>
+        <div class="ws-tab" onclick="setKanbanWS('personal',this)">Osobní</div>
+      </div>
+      <div class="kanban" id="kanban-work-board">
+        <div class="kol" id="k-work-ideas" ondragover="onDragOver(event,'work','ideas')" ondrop="onDrop(event,'work','ideas')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--accent)"></span>Nápady / Úkoly</div><span class="kol-cnt" id="k-cnt-work-ideas">0</span></div>
+          <div class="kol-body" id="k-work-body-ideas"></div>
+        </div>
+        <div class="kol" id="k-work-inprogress" ondragover="onDragOver(event,'work','inprogress')" ondrop="onDrop(event,'work','inprogress')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--amber)"></span>Probíhá</div><span class="kol-cnt" id="k-cnt-work-inprogress">0</span></div>
+          <div class="kol-body" id="k-work-body-inprogress"></div>
+        </div>
+        <div class="kol completed-kol" id="k-work-completed" ondragover="onDragOver(event,'work','completed')" ondrop="onDrop(event,'work','completed')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--green)"></span>Splněno</div><span class="kol-cnt" id="k-cnt-work-completed">0</span></div>
+          <div class="kol-body" id="k-work-body-completed"></div>
+        </div>
+      </div>
+      <div class="kanban" id="kanban-personal-board" style="display:none">
+        <div class="kol" id="k-personal-ideas" ondragover="onDragOver(event,'personal','ideas')" ondrop="onDrop(event,'personal','ideas')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--accent)"></span>Nápady / Úkoly</div><span class="kol-cnt" id="k-cnt-personal-ideas">0</span></div>
+          <div class="kol-body" id="k-personal-body-ideas"></div>
+        </div>
+        <div class="kol" id="k-personal-inprogress" ondragover="onDragOver(event,'personal','inprogress')" ondrop="onDrop(event,'personal','inprogress')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--amber)"></span>Probíhá</div><span class="kol-cnt" id="k-cnt-personal-inprogress">0</span></div>
+          <div class="kol-body" id="k-personal-body-inprogress"></div>
+        </div>
+        <div class="kol completed-kol" id="k-personal-completed" ondragover="onDragOver(event,'personal','completed')" ondrop="onDrop(event,'personal','completed')" ondragleave="onDragLeave(event)">
+          <div class="kol-head"><div class="kol-name"><span class="kol-dot" style="background:var(--green)"></span>Splněno</div><span class="kol-cnt" id="k-cnt-personal-completed">0</span></div>
+          <div class="kol-body" id="k-personal-body-completed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY PLANNER -->
+  <div class="page" id="page-weekly">
+    <div class="scroll-area">
+      <div class="page-title">Týdenní plán</div>
+      <div class="wp-header-row">
+        <div class="week-chip-btn" onclick="openWPO()">
+          <span style="font-size:13px;color:var(--text3)">📅</span>
+          <span class="wcb-wn" id="wc-num">Týden —</span>
+          <span class="wcb-range" id="wc-range">vyberte týden</span>
+        </div>
+        <div class="wp-ws-toggle">
+          <div class="wp-wst active" onclick="setWPWS('work',this)">Práce</div>
+          <div class="wp-wst" onclick="setWPWS('personal',this)">Osobní</div>
+          <div class="wp-wst" onclick="setWPWS('both',this)">Vše</div>
+        </div>
+        <button class="btn-secondary" onclick="openTaskModal('work',null)">+ Přidat úkol</button>
+      </div>
+      <div class="week-grid" id="weekly-grid"></div>
+      <div class="sport-section">
+        <div class="sport-header">
+          <div class="sport-title-row">
+            <div class="sport-title">Sport &amp; Aktivita</div>
+            <span class="sport-week-label" id="sport-week-label" style="font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)">—</span>
+          </div>
+          <div class="sport-filters" id="sport-filters"></div>
+        </div>
+        <div class="sport-grid" id="sport-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY GOALS -->
+  <div class="page" id="page-goals">
+    <div class="scroll-area">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div><div class="page-title">Týdenní cíle</div><div class="page-sub" id="goals-week-sub">—</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="goals-week-nav">
+            <button class="wg-nav-btn" onclick="shiftGoalWeek(-1)">‹</button>
+            <span class="wg-curr-label" id="wg-week-label">Týden —</span>
+            <button class="wg-nav-btn" onclick="shiftGoalWeek(1)">›</button>
+          </div>
+          <button class="btn-primary" onclick="openGoalModal()"><svg viewBox="0 0 12 12"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Nový cíl</button>
+        </div>
+      </div>
+      <div class="goals-grid" id="goals-grid"></div>
+    </div>
+  </div>
+
+  <!-- STATISTICS -->
+  <div class="page" id="page-stats">
+    <div class="scroll-area">
+      <div class="page-title">Statistiky</div>
+      <div class="stats-cards">
+        <div class="stat-card sc-blue"><div class="sc-label">Celkem splněno</div><div class="sc-value" id="st-done">0</div><div class="sc-sub">celkem</div></div>
+        <div class="stat-card sc-green"><div class="sc-label">Tento měsíc</div><div class="sc-value" id="st-month">0</div><div class="sc-sub">splněno</div></div>
+        <div class="stat-card sc-amber"><div class="sc-label">Nejlepší série</div><div class="sc-value" id="st-streak">0</div><div class="sc-sub">dní</div></div>
+        <div class="stat-card sc-purple"><div class="sc-label">Průměr / týden</div><div class="sc-value" id="st-avg">0</div><div class="sc-sub">úkolů splněno</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-ttl" style="margin-bottom:0">Heatmapa splnění cílů</div>
+          <div style="font-size:10px;font-family:'Fira Code',monospace;color:var(--text3)">% denních cílů splněno</div>
+        </div>
+        <div class="heatmap-wrap" id="heatmap-wrap"></div>
+        <div class="hm-legend">
+          <span class="hm-legend-label">Méně</span>
+          <div class="hm-legend-cells"><div class="hm-cell"></div><div class="hm-cell l1"></div><div class="hm-cell l2"></div><div class="hm-cell l3"></div><div class="hm-cell l4"></div></div>
+          <span class="hm-legend-label">Více</span>
+        </div>
+      </div>
+      <div class="completion-chart card">
+        <div class="section-ttl" style="margin-bottom:12px">Splněné úkoly — posledních 14 dní</div>
+        <div class="chart-bars" id="chart-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px 24px;gap:14px;min-height:0">
+      <div><div class="page-title">Projekty</div><div class="page-sub">Pracovní prostor ve stylu OneNote</div></div>
+      <div class="projects-layout">
+        <div class="proj-sidebar">
+          <div class="proj-sb-head"><div class="proj-sb-title">Projekty</div><button class="proj-sb-add" onclick="createProject()">+</button></div>
+          <div class="proj-list" id="proj-list"></div>
+        </div>
+        <div class="proj-main" id="proj-main"><div class="proj-no-selection">← Vyberte projekt pro začátek</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="scroll-area">
+      <div class="page-title">Nastavení</div>
+      <div class="settings-grid">
+        <div class="settings-section">
+          <div class="ss-title">Profily</div>
+          <div class="profile-list" id="settings-profile-list"></div>
+        </div>
+        <div class="settings-section">
+          <div class="ss-title">Správa dat</div>
+          <button class="settings-btn" onclick="exportData()">📤 Exportovat data (JSON)</button>
+          <button class="settings-btn" onclick="document.getElementById('import-file').click()">📥 Importovat data (JSON)</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+          <button class="settings-btn danger" onclick="confirmReset()">🗑️ Smazat všechna data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK PICKER -->
+<div class="wpo-ov" id="wpo-overlay" onclick="closeWPOOut(event)">
+  <div class="wpo-box">
+    <div class="wpo-head"><span class="wpo-mlabel" id="wpo-mlabel">—</span><div class="wpo-nav"><button class="wpo-nbtn" onclick="wpoNav(-1)">‹</button><button class="wpo-nbtn" onclick="wpoNav(1)">›</button></div></div>
+    <div class="wpo-grid" id="wpo-grid"></div>
+    <button class="wpo-close" onclick="closeWPO()">Zavřít</button>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-ov" id="task-modal-ov" onclick="closeTaskModalOut(event)">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-ttl" id="task-modal-title">Nový úkol</div><button class="modal-x" onclick="closeTaskModal()">✕</button></div>
+    <div class="field"><label class="flabel">Název</label><input class="finput" id="tm-title" placeholder="Co je potřeba udělat?"/></div>
+    <div class="frow">
+      <div class="field"><label class="flabel">Priorita</label><select class="fselect" id="tm-priority"><option value="medium">Střední</option><option value="high">Vysoká</option><option value="low">Nízká</option></select></div>
+      <div class="field"><label class="flabel">Oblast</label><select class="fselect" id="tm-ws"><option value="work">Práce</option><option value="personal">Osobní</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label class="flabel">Termín <span style="font-weight:400;text-transform:none;font-size:9px;letter-spacing:0;color:var(--text3)">— volitelný</span></label><input type="date" class="fdate" id="tm-date"/></div>
+      <div class="field"><label class="flabel">Stav</label><select class="fselect" id="tm-status"><option value="ideas">Nápady / Úkoly</option><option value="inprogress">Probíhá</option><option value="completed">Splněno</option></select></div>
+    </div>
+    <div class="field"><label class="flabel">Opakování</label>
+      <div class="recur-opts">
+        <div class="recur-chip sel" data-v="none" onclick="selRecur(this)">Žádné</div>
+        <div class="recur-chip" data-v="daily" onclick="selRecur(this)">Denně</div>
+        <div class="recur-chip" data-v="weekly" onclick="selRecur(this)">Týdně</div>
+        <div class="recur-chip" data-v="weekdays" onclick="selRecur(this)">Pracovní dny</div>
+        <div class="recur-chip" data-v="monthly" onclick="selRecur(this)">Měsíčně</div>
+      </div>
+    </div>
+    <div class="field"><label class="flabel">Kontrolní seznam</label>
+      <div class="bullet-list" id="tm-bullets"></div>
+      <div class="b-add-row"><input class="b-inp" id="tm-bi" placeholder="Přidat položku..."/><button class="b-add-btn" onclick="addBullet()">+ Přidat</button></div>
+    </div>
+    <div class="field"><label class="flabel">Poznámky</label><textarea class="ftextarea" id="tm-notes" placeholder="Volitelné poznámky..."></textarea></div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeTaskModal()">Zrušit</button><button class="btn-save" id="tm-save-btn" onclick="saveTask()">Přidat úkol</button></div>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-ov" id="goal-modal-ov" onclick="closeGoalModalOut(event)">
+  <div class="modal" style="width:500px">
+    <div class="modal-hdr"><div class="modal-ttl">Nový týdenní cíl</div><button class="modal-x" onclick="closeGoalModal()">✕</button></div>
+    <div class="field">
+      <label class="flabel">Typ cíle</label>
+      <div class="goal-type-selector">
+        <div class="goal-type-opt sel" id="gto-habit" onclick="selGoalType('habit')">
+          <div class="gto-icon">✅</div><div class="gto-label">Návyk / Zvyk</div><div class="gto-sub">Denní zaškrtávání</div>
+        </div>
+        <div class="goal-type-opt" id="gto-numeric" onclick="selGoalType('numeric')">
+          <div class="gto-icon">🔢</div><div class="gto-label">Numerický cíl</div><div class="gto-sub">Zadávání čísel denně</div>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label class="flabel">Název cíle</label><input class="finput" id="gm-title" placeholder="např. Vstát v 5:00, 1000 kliků..."/></div>
+    <div class="field" id="gm-target-field" style="display:none"><label class="flabel">Cílová hodnota</label><input type="number" class="finput" id="gm-target" placeholder="např. 1000"/></div>
+    <div class="field" id="gm-unit-field" style="display:none"><label class="flabel">Jednotka</label><input class="finput" id="gm-unit" placeholder="např. kliky, km, minuty..."/></div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeGoalModal()">Zrušit</button><button class="btn-save" onclick="saveGoal()">Vytvořit cíl</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-ov" id="confirm-ov">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Potvrdit</div>
+    <div class="confirm-msg" id="confirm-msg">Jste si jistí?</div>
+    <div class="confirm-btns"><button class="confirm-cancel" onclick="closeConfirm()">Zrušit</button><button class="confirm-ok" id="confirm-ok-btn">Potvrdit</button></div>
+  </div>
+</div>
+
+<script>
+// ═══════ CONSTANTS ═══════
+const MONTHS_FULL=['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+const MONTHS_S=['Led','Úno','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+const DAYS_S=['Po','Út','St','Čt','Pá'];
+const DAYS_FULL=['Pondělí','Úterý','Středa','Čtvrtek','Pátek'];
+const SPORTS=[
+  {id:'running',name:'Běh',icon:'🏃'},
+  {id:'cycling',name:'Cyklistika',icon:'🚴'},
+  {id:'swimming',name:'Plavání',icon:'🏊'},
+  {id:'gym',name:'Posilovna',icon:'💪'},
+  {id:'yoga',name:'Jóga',icon:'🧘'},
+  {id:'walking',name:'Chůze',icon:'🚶'},
+  {id:'football',name:'Fotbal',icon:'⚽'},
+  {id:'tennis',name:'Tenis',icon:'🎾'},
+  {id:'basketball',name:'Basketbal',icon:'🏀'},
+  {id:'hiking',name:'Turistika',icon:'🥾'},
+];
+const PROJ_COLORS=['#4F46E5','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#3B82F6','#06B6D4'];
+
+// ═══════ STATE ═══════
+let state={};
+let activeProfileId=null;
+let nextId=1;
+let currentPage='dashboard';
+let currentKanbanWS='work';
+let currentWPWS='work';
+let currentGoalWeekOffset=0;
+let currentProjectId=null;
+let selWeekMon=null;
+let wpoY,wpoM;
+let taskModalWS='work',taskModalEditId=null,taskModalBullets=[],taskModalRecur='none';
+let goalModalType='habit';
+let confirmCallback=null;
+let dragState=null;
+let activeSportFilter='all';
+
+// ═══════ PERSISTENCE ═══════
+function loadState(){try{const r=localStorage.getItem('flowtask_v6');if(r)state=JSON.parse(r)}catch(e){state={}}
+  if(!state.profiles)state.profiles={};if(!state.activeProfile)state.activeProfile=null;
+  nextId=state.nextId||1;activeProfileId=state.activeProfile}
+function saveState(){state.nextId=nextId;state.activeProfile=activeProfileId;try{localStorage.setItem('flowtask_v6',JSON.stringify(state))}catch(e){}}
+function getProfile(){return activeProfileId&&state.profiles[activeProfileId]?state.profiles[activeProfileId]:null}
+function getPD(){const p=getProfile();return p?p.data:null}
+function ensureProfileData(pid){
+  if(!state.profiles[pid].data)state.profiles[pid].data={tasks:{work:[],personal:[]},projects:{},sportLog:{},completedDates:[],weeklyGoals:{}};
+  const d=state.profiles[pid].data;
+  if(!d.tasks)d.tasks={work:[],personal:[]};
+  if(!d.projects)d.projects={};if(!d.sportLog)d.sportLog={};
+  if(!d.completedDates)d.completedDates=[];if(!d.weeklyGoals)d.weeklyGoals={};
+}
+
+// ═══════ DATE UTILS ═══════
+function dsDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function pad(n){return String(n).padStart(2,'0')}
+function fshort(d){return pad(d.getDate())+' '+MONTHS_S[d.getMonth()]}
+function getMon(d){const day=d.getDay()||7,m=new Date(d);m.setDate(d.getDate()-day+1);m.setHours(0,0,0,0);return m}
+function weekNum(d){const c=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));c.setUTCDate(c.getUTCDate()+4-(c.getUTCDay()||7));const y=new Date(Date.UTC(c.getUTCFullYear(),0,1));return Math.ceil((((c-y)/86400000)+1)/7)}
+function weekKey(d){const mon=getMon(d);return mon.getFullYear()+'-W'+pad(weekNum(mon))}
+function todayStr(){return dsDate(new Date())}
+function isRecurToday(t,dateStr){
+  if(!t.recur||t.recur==='none')return t.dueDate===dateStr;
+  const d=new Date(dateStr+'T00:00:00'),dow=d.getDay();
+  if(t.recur==='daily')return true;
+  if(t.recur==='weekdays')return dow>=1&&dow<=5;
+  if(t.recur==='weekly'){if(!t.dueDate)return false;return new Date(t.dueDate+'T00:00:00').getDay()===dow}
+  if(t.recur==='monthly'){if(!t.dueDate)return false;return new Date(t.dueDate+'T00:00:00').getDate()===d.getDate()}
+  return false;
+}
+
+// ═══════ PROFILE SCREEN ═══════
+let selectedColor='#4F46E5';
+function selColor(el){document.querySelectorAll('.ps-clr').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');selectedColor=el.dataset.c}
+function renderProfileScreen(){
+  const ids=Object.keys(state.profiles);
+  const list=document.getElementById('ps-profiles-list');list.innerHTML='';
+  if(!ids.length){document.getElementById('ps-profiles-section').style.display='none';return}
+  document.getElementById('ps-profiles-section').style.display='block';
+  ids.forEach(pid=>{
+    const p=state.profiles[pid];
+    const item=document.createElement('div');item.className='ps-profile-item';
+    item.innerHTML=`<div class="ps-av" style="background:${p.color}">${p.initials}</div><div><div class="ps-pname">${p.name}</div><div class="ps-prole">FlowTask Pro</div></div>`;
+    item.onclick=()=>enterApp(pid);list.appendChild(item);
+  });
+}
+function createProfile(){
+  const name=document.getElementById('ps-name').value.trim();if(!name)return;
+  const pid='p_'+Date.now();
+  const initials=name.split(' ').map(w=>w[0].toUpperCase()).join('').slice(0,2);
+  state.profiles[pid]={id:pid,name,initials,color:selectedColor};
+  ensureProfileData(pid);seedData(pid);saveState();enterApp(pid);
+}
+function enterApp(pid){
+  activeProfileId=pid;state.activeProfile=pid;ensureProfileData(pid);saveState();
+  document.getElementById('profile-screen').style.display='none';
+  document.getElementById('app').classList.add('show');initApp();
+}
+function signOut(e){e.stopPropagation();activeProfileId=null;state.activeProfile=null;saveState();
+  document.getElementById('app').classList.remove('show');document.getElementById('profile-screen').style.display='flex';renderProfileScreen()}
+
+// ═══════ APP INIT ═══════
+function initApp(){
+  const p=getProfile();if(!p)return;
+  document.getElementById('sb-avatar').style.background=p.color;
+  document.getElementById('sb-avatar').textContent=p.initials;
+  document.getElementById('sb-uname').textContent=p.name;
+  const now=new Date();
+  const dn=['Ne','Po','Út','St','Čt','Pá','So'];
+  document.getElementById('tb-date').textContent=dn[now.getDay()]+', '+now.getDate()+' '+MONTHS_S[now.getMonth()]+' '+now.getFullYear();
+  selWeekMon=getMon(now);updateWeekPill();
+  renderAll();renderSidebar();goPage('dashboard');
+  setInterval(updateGreeting,60000);updateGreeting();
+}
+function updateGreeting(){
+  const h=new Date().getHours();const p=getProfile();if(!p)return;
+  let greet='Dobré ráno';if(h>=12&&h<17)greet='Dobré odpoledne';else if(h>=17)greet='Dobrý večer';
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dg-time').textContent=t+' — '+new Date().toLocaleDateString('cs-CZ',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('dg-name').textContent=greet+', '+p.name+'!';
+}
+
+// ═══════ NAV ═══════
+function goPage(page){
+  currentPage=page;
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(el=>el.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  const nb=document.getElementById('nav-'+page);if(nb)nb.classList.add('active');
+  const crumbMap={dashboard:'Přehled',kanban:'Správce úkolů',weekly:'Týdenní plán',goals:'Týdenní cíle',stats:'Statistiky',projects:'Projekty',settings:'Nastavení'};
+  document.getElementById('tb-crumb1').textContent=crumbMap[page]||page;
+  if(page==='dashboard')renderDashboard();
+  if(page==='weekly'){renderWeeklyGrid();renderSportFilters();renderSportGrid()}
+  if(page==='goals')renderGoalsPage();
+  if(page==='stats')renderStats();
+  if(page==='projects')renderProjectsPage();
+  if(page==='settings')renderSettingsPage();
+  renderBadges();
+}
+
+// ═══════ RENDER ALL ═══════
+function renderAll(){renderKanbanBoard('work');renderKanbanBoard('personal');renderDashboard();renderBadges();renderSidebar()}
+function renderBadges(){
+  const d=getPD();if(!d)return;
+  const all=[...d.tasks.work,...d.tasks.personal];
+  const active=all.filter(t=>t.status!=='completed').length;
+  const todayT=all.filter(t=>isRecurToday(t,todayStr())&&t.status!=='completed').length;
+  document.getElementById('badge-dashboard').textContent=active;
+  document.getElementById('badge-kanban').textContent=active;
+}
+function renderSidebar(){
+  const d=getPD();if(!d)return;
+  const pids=Object.keys(d.projects);
+  const grp=document.getElementById('sb-projects-group');
+  const list=document.getElementById('sb-projects-list');list.innerHTML='';
+  if(pids.length>0){
+    grp.style.display='block';
+    pids.forEach(pid=>{
+      const proj=d.projects[pid];
+      const item=document.createElement('div');item.className='sb-proj-item'+(currentProjectId===pid?' active':'');
+      item.innerHTML=`<span class="sb-proj-dot" style="background:${proj.color}"></span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${proj.name}</span>`;
+      item.onclick=()=>{currentProjectId=pid;goPage('projects')};list.appendChild(item);
+    });
+  } else grp.style.display='none';
+}
+
+// ═══════ DASHBOARD ═══════
+function renderDashboard(){
+  const d=getPD();if(!d)return;
+  const all=[...d.tasks.work,...d.tasks.personal];
+  const today=todayStr();
+  const todayTasks=all.filter(t=>isRecurToday(t,today));
+  const done=all.filter(t=>t.status==='completed').length;
+  const streak=calcStreak(d);
+  const total=all.length;
+  const pct=total?Math.round((done/total)*100):0;
+  document.getElementById('sc-total').textContent=total;
+  document.getElementById('sc-done').textContent=done;
+  document.getElementById('sc-today').textContent=todayTasks.filter(t=>t.status!=='completed').length;
+  document.getElementById('sc-streak').textContent=streak;
+  document.getElementById('dg-streak-num').textContent=streak;
+  // completion overview bar chart (last 7 days)
+  document.getElementById('co-pct').textContent=pct+'%';
+  document.getElementById('co-fill').style.width=pct+'%';
+  document.getElementById('co-done-lbl').textContent=done+' splněno';
+  document.getElementById('co-total-lbl').textContent=total+' celkem';
+  const bars=document.getElementById('co-bars');bars.innerHTML='';
+  const now=new Date();
+  let barMax=0;
+  const barData=[];
+  for(let i=6;i>=0;i--){const dt=new Date(now);dt.setDate(now.getDate()-i);const ds=dsDate(dt);const cnt=d.completedDates.filter(x=>x===ds).length;barData.push({label:pad(dt.getDate()),cnt});if(cnt>barMax)barMax=cnt}
+  barData.forEach(bd=>{
+    const wrap=document.createElement('div');wrap.className='co-bar-wrap';
+    const bar=document.createElement('div');bar.className='co-bar';
+    bar.style.height=barMax?Math.max(4,Math.round((bd.cnt/barMax)*24))+'px':'4px';
+    const lbl=document.createElement('div');lbl.className='co-bar-lbl';lbl.textContent=bd.label;
+    wrap.appendChild(bar);wrap.appendChild(lbl);bars.appendChild(wrap);
+  });
+  // today tasks
+  const ttl=document.getElementById('today-tasks-list');ttl.innerHTML='';
+  const activeTodayTasks=todayTasks.filter(t=>t.status!=='completed');
+  if(!activeTodayTasks.length){ttl.innerHTML='<div class="empty-state">Žádné dnešní úkoly — skvělá práce! 🎉</div>'}
+  else activeTodayTasks.slice(0,10).forEach(t=>{
+    const ws=d.tasks.work.find(x=>x.id===t.id)?'Práce':'Osobní';
+    const div=document.createElement('div');div.className='today-task-item p-'+t.priority+'-t';
+    div.innerHTML=`<div class="tti-check ${t.status==='completed'?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><button class="tact edit" onclick="openTaskModal('${d.tasks.work.find(x=>x.id===t.id)?'work':'personal'}',${t.id})" style="opacity:.5">✎</button>`;
+    ttl.appendChild(div);
+  });
+  // upcoming
+  const ul=document.getElementById('upcoming-list');ul.innerHTML='';
+  const upcoming=all.filter(t=>t.dueDate&&t.dueDate>today&&t.status!=='completed').sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,8);
+  if(!upcoming.length){ul.innerHTML='<div class="empty-state">Žádné nadcházející termíny</div>'}
+  else upcoming.forEach(t=>{
+    const div=document.createElement('div');div.className='up-item';
+    const daysLeft=Math.ceil((new Date(t.dueDate+'T00:00:00')-new Date(today+'T00:00:00'))/(1000*60*60*24));
+    const daysStr=daysLeft===1?'zítra':daysLeft+'d';
+    div.innerHTML=`<span class="up-date">${t.dueDate}</span><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span><span class="up-title">${t.title}</span><span style="font-size:9px;font-family:'Fira Code',monospace;color:${daysLeft<=2?'var(--red)':'var(--text3)'}">za ${daysStr}</span>`;
+    ul.appendChild(div);
+  });
+}
+function quickComplete(id){
+  const d=getPD();if(!d)return;
+  const t=[...d.tasks.work,...d.tasks.personal].find(x=>x.id===id);
+  if(t){t.status=t.status==='completed'?'ideas':'completed';logCompletionDate(d);saveState();renderAll()}
+}
+function logCompletionDate(d){const today=todayStr();if(!d.completedDates.includes(today))d.completedDates.push(today)}
+function calcStreak(d){
+  let streak=0;const today=new Date();
+  for(let i=0;i<365;i++){const dt=new Date(today);dt.setDate(today.getDate()-i);if(d.completedDates.includes(dsDate(dt)))streak++;else if(i>0)break}
+  return streak;
+}
+
+// ═══════ TASK MANAGER (kanban) ═══════
+function setKanbanWS(ws,el){
+  currentKanbanWS=ws;
+  document.querySelectorAll('#kanban-ws-tabs .ws-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');
+  document.getElementById('kanban-work-board').style.display=ws==='work'?'grid':'none';
+  document.getElementById('kanban-personal-board').style.display=ws==='personal'?'grid':'none';
+}
+function renderKanbanBoard(ws){
+  const d=getPD();if(!d)return;
+  ['ideas','inprogress','completed'].forEach(col=>{
+    const body=document.getElementById('k-'+ws+'-body-'+col);if(!body)return;
+    body.innerHTML='';
+    d.tasks[ws].filter(t=>t.status===col).forEach(t=>body.appendChild(mkTaskCard(ws,t)));
+    const cnt=document.getElementById('k-cnt-'+ws+'-'+col);if(cnt)cnt.textContent=d.tasks[ws].filter(t=>t.status===col).length;
+  });
+}
+function mkTaskCard(ws,t){
+  const card=document.createElement('div');
+  const pcls=t.priority==='high'?'ph':t.priority==='medium'?'pm':'pl';
+  card.className='task-card '+pcls;card.draggable=true;card.dataset.id=t.id;
+  card.addEventListener('dragstart',e=>{dragState={id:t.id,ws};card.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',t.id)});
+  card.addEventListener('dragend',()=>{card.classList.remove('dragging');dragState=null;document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'))});
+  const now=new Date();now.setHours(0,0,0,0);
+  const overdue=t.dueDate&&new Date(t.dueDate+'T00:00:00')<now&&t.status!=='completed';
+  const total=t.bullets?t.bullets.length:0,done=t.bullets?t.bullets.filter(b=>b.done).length:0;
+  const pct=total?Math.round((done/total)*100):0;
+  const priLbl=t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká';
+  const clHTML=t.bullets?t.bullets.map((b,bi)=>`<div class="cli-item"><input type="checkbox" ${b.done?'checked':''} onchange="toggleBullet('${ws}',${t.id},${bi},event)"><span class="${b.done?'ck':''}">${b.text}</span></div>`).join(''):'';
+  card.innerHTML=`<div class="tc-top"><div class="tc-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tc-actions"><button class="tact edit" onclick="openTaskModal('${ws}',${t.id})">✎</button>${t.status!=='completed'?`<button class="tact done-btn" onclick="completeTask('${ws}',${t.id})">✓</button>`:''}<button class="tact del" onclick="deleteTask('${ws}',${t.id})">✕</button></div></div><div class="tc-meta"><span class="pbadge p-${t.priority}">${priLbl}</span>${t.dueDate?`<span class="tc-date ${overdue?'overdue':''}">${t.dueDate}${overdue?' ⚠':''}</span>`:''} ${t.recur&&t.recur!=='none'?'<span class="tc-recur">🔁</span>':''}</div>${total?`<div class="cl-wrap">${clHTML}<div class="cl-track"><div class="cl-fill" style="width:${pct}%"></div></div></div>`:''}`;
+  return card;
+}
+function completeTask(ws,id){const d=getPD();if(!d)return;const t=d.tasks[ws].find(t=>t.id===id);if(t){t.status='completed';logCompletionDate(d);saveState();renderAll()}}
+function deleteTask(ws,id){showConfirm('Smazat úkol','Trvale smazat tento úkol?',()=>{const d=getPD();if(!d)return;d.tasks[ws]=d.tasks[ws].filter(t=>t.id!==id);saveState();renderAll()})}
+function toggleBullet(ws,taskId,bi,e){const d=getPD();if(!d)return;const t=d.tasks[ws].find(t=>t.id===taskId);if(!t||!t.bullets)return;t.bullets[bi].done=e.target.checked;if(t.bullets.every(b=>b.done)&&t.bullets.length>0){t.status='completed';logCompletionDate(d)}saveState();renderAll()}
+function onDragOver(e,ws,col){e.preventDefault();const b=document.getElementById('k-'+ws+'-body-'+col);if(b)b.classList.add('drag-over')}
+function onDragLeave(e){const b=e.currentTarget.querySelector('.kol-body');if(b)b.classList.remove('drag-over')}
+function onDrop(e,ws,col){
+  e.preventDefault();document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  if(!dragState)return;const d=getPD();if(!d)return;
+  const t=d.tasks[dragState.ws].find(t=>t.id===dragState.id);if(!t)return;
+  if(dragState.ws!==ws){d.tasks[dragState.ws]=d.tasks[dragState.ws].filter(x=>x.id!==t.id);d.tasks[ws].push(t);renderKanbanBoard(dragState.ws)}
+  t.status=col;if(col==='completed')logCompletionDate(d);saveState();renderAll();
+}
+
+// ═══════ TASK MODAL ═══════
+function openTaskModal(ws,editId){
+  taskModalWS=ws;taskModalEditId=editId;taskModalBullets=[];taskModalRecur='none';
+  const d=getPD();
+  if(editId!==null&&editId!==undefined&&d){
+    const t=[...d.tasks.work,...d.tasks.personal].find(x=>x.id===editId);
+    if(t){
+      document.getElementById('task-modal-title').textContent='Upravit úkol';
+      document.getElementById('tm-save-btn').textContent='Uložit změny';
+      document.getElementById('tm-title').value=t.title;
+      document.getElementById('tm-priority').value=t.priority;
+      document.getElementById('tm-ws').value=d.tasks.work.find(x=>x.id===editId)?'work':'personal';
+      document.getElementById('tm-date').value=t.dueDate||'';
+      document.getElementById('tm-status').value=t.status;
+      document.getElementById('tm-notes').value=t.notes||'';
+      taskModalBullets=(t.bullets||[]).map(b=>({...b}));
+      taskModalRecur=t.recur||'none';
+    }
+  } else {
+    document.getElementById('task-modal-title').textContent='Nový úkol';
+    document.getElementById('tm-save-btn').textContent='Přidat úkol';
+    document.getElementById('tm-title').value='';document.getElementById('tm-priority').value='medium';
+    document.getElementById('tm-ws').value=ws;document.getElementById('tm-date').value='';
+    document.getElementById('tm-status').value='ideas';document.getElementById('tm-notes').value='';
+    taskModalRecur='none';
+  }
+  renderRecurOpts();renderTaskBullets();
+  document.getElementById('task-modal-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('tm-title').focus(),80);
+}
+function closeTaskModal(){document.getElementById('task-modal-ov').classList.remove('open')}
+function closeTaskModalOut(e){if(e.target===document.getElementById('task-modal-ov'))closeTaskModal()}
+function selRecur(el){document.querySelectorAll('.recur-chip').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');taskModalRecur=el.dataset.v}
+function renderRecurOpts(){document.querySelectorAll('.recur-chip').forEach(el=>el.classList.toggle('sel',el.dataset.v===taskModalRecur))}
+function renderTaskBullets(){
+  const list=document.getElementById('tm-bullets');list.innerHTML='';
+  taskModalBullets.forEach((b,i)=>{const row=document.createElement('div');row.className='b-item';row.innerHTML=`<span class="b-dot"></span><span class="b-text">${b.text}</span><button class="b-del" onclick="rmBullet(${i})">✕</button>`;list.appendChild(row)});
+}
+function addBullet(){const inp=document.getElementById('tm-bi');const v=inp.value.trim();if(!v)return;taskModalBullets.push({text:v,done:false});inp.value='';renderTaskBullets();inp.focus()}
+function rmBullet(i){taskModalBullets.splice(i,1);renderTaskBullets()}
+function saveTask(){
+  const title=document.getElementById('tm-title').value.trim();if(!title){document.getElementById('tm-title').focus();return}
+  const d=getPD();if(!d)return;
+  const ws=document.getElementById('tm-ws').value;
+  const priority=document.getElementById('tm-priority').value;
+  const dueDate=document.getElementById('tm-date').value||null;
+  const status=document.getElementById('tm-status').value;
+  const notes=document.getElementById('tm-notes').value;
+  const recur=taskModalRecur;
+  if(taskModalEditId!==null&&taskModalEditId!==undefined){
+    let t=d.tasks.work.find(x=>x.id===taskModalEditId)||d.tasks.personal.find(x=>x.id===taskModalEditId);
+    if(t){
+      const origWS=d.tasks.work.find(x=>x.id===taskModalEditId)?'work':'personal';
+      if(origWS!==ws){d.tasks[origWS]=d.tasks[origWS].filter(x=>x.id!==t.id);d.tasks[ws].push(t)}
+      Object.assign(t,{title,priority,dueDate,status,notes,recur,bullets:taskModalBullets.map(b=>({...b}))});
+    }
+  } else {
+    d.tasks[ws].push({id:nextId++,title,priority,dueDate,status,notes,recur,bullets:taskModalBullets.map(b=>({...b})),ws});
+  }
+  if(status==='completed')logCompletionDate(d);
+  saveState();closeTaskModal();renderAll();
+  if(currentPage==='weekly')renderWeeklyGrid();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeTaskModal();closeGoalModal();closeWPO()}
+  if(e.key==='Enter'&&document.getElementById('task-modal-ov').classList.contains('open')){
+    if(document.activeElement&&document.activeElement.id==='tm-bi'){addBullet();return}
+    if(document.activeElement&&document.activeElement.tagName!=='SELECT'&&document.activeElement.tagName!=='TEXTAREA')saveTask();
+  }
+});
+
+// ═══════ WEEK PICKER ═══════
+function updateWeekPill(){
+  if(!selWeekMon)return;
+  const fri=new Date(selWeekMon);fri.setDate(selWeekMon.getDate()+4);
+  const wn=weekNum(selWeekMon);
+  document.getElementById('wc-num').textContent='Týden '+wn;
+  document.getElementById('wc-range').textContent=fshort(selWeekMon)+' – '+fshort(fri);
+}
+function openWPO(){const r=selWeekMon||new Date();wpoY=r.getFullYear();wpoM=r.getMonth();renderWPOGrid();document.getElementById('wpo-overlay').classList.add('open')}
+function closeWPO(){document.getElementById('wpo-overlay').classList.remove('open')}
+function closeWPOOut(e){if(e.target===document.getElementById('wpo-overlay'))closeWPO()}
+function wpoNav(d){wpoM+=d;if(wpoM>11){wpoM=0;wpoY++}if(wpoM<0){wpoM=11;wpoY--}renderWPOGrid()}
+function renderWPOGrid(){
+  document.getElementById('wpo-mlabel').textContent=MONTHS_FULL[wpoM]+' '+wpoY;
+  const g=document.getElementById('wpo-grid');g.innerHTML='';
+  ['Po','Út','St','Čt','Pá','So','Ne'].forEach(dl=>{const e=document.createElement('div');e.className='wpo-dow';e.textContent=dl;g.appendChild(e)});
+  const fd=new Date(wpoY,wpoM,1),sd=(fd.getDay()+6)%7,dim=new Date(wpoY,wpoM+1,0).getDate(),pd=new Date(wpoY,wpoM,0).getDate();
+  const tod=new Date();tod.setHours(0,0,0,0);
+  for(let i=sd-1;i>=0;i--)g.appendChild(wpoDayEl(new Date(wpoY,wpoM-1,pd-i),true));
+  for(let i=1;i<=dim;i++)g.appendChild(wpoDayEl(new Date(wpoY,wpoM,i),false));
+  const rem=(7-(sd+dim)%7)%7;
+  for(let i=1;i<=rem;i++)g.appendChild(wpoDayEl(new Date(wpoY,wpoM+1,i),true));
+}
+function wpoDayEl(d,other){
+  const e=document.createElement('div');e.className='wpo-d'+(other?' other-m':'');e.textContent=d.getDate();
+  const tod=new Date();tod.setHours(0,0,0,0);
+  if(d.getTime()===tod.getTime())e.classList.add('is-tod');
+  if(selWeekMon){const sun=new Date(selWeekMon);sun.setDate(selWeekMon.getDate()+6);if(d>=selWeekMon&&d<=sun){e.classList.add('in-wk');if(d.getTime()===selWeekMon.getTime())e.classList.add('wk-start');if(d.getTime()===sun.getTime())e.classList.add('wk-end')}}
+  e.addEventListener('click',()=>{const dow=(d.getDay()+6)%7,m=new Date(d);m.setDate(d.getDate()-dow);m.setHours(0,0,0,0);selWeekMon=m;updateWeekPill();renderWPOGrid();closeWPO();if(currentPage==='weekly'){renderWeeklyGrid();renderSportGrid()}});
+  return e;
+}
+
+// ═══════ WEEKLY PLANNER ═══════
+function setWPWS(ws,el){currentWPWS=ws;document.querySelectorAll('.wp-wst').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderWeeklyGrid()}
+function renderWeeklyGrid(){
+  const c=document.getElementById('weekly-grid');if(!c)return;
+  const d=getPD();if(!d)return;
+  if(!selWeekMon){c.innerHTML='<div style="color:var(--text3);font-size:12px;font-family:Fira Code,monospace;grid-column:1/-1">← Vyberte týden pomocí výběru výše</div>';return}
+  const now=new Date();now.setHours(0,0,0,0);c.innerHTML='';
+  const fri=new Date(selWeekMon);fri.setDate(selWeekMon.getDate()+4);
+  document.getElementById('sport-week-label').textContent=fshort(selWeekMon)+' – '+fshort(fri);
+  const wsList=currentWPWS==='both'?['work','personal']:[currentWPWS];
+  for(let i=0;i<5;i++){
+    const dt=new Date(selWeekMon);dt.setDate(selWeekMon.getDate()+i);
+    const isTod=dt.getTime()===now.getTime(),dstr=dsDate(dt);
+    const col=document.createElement('div');col.className='wk-col'+(isTod?' today-col':'');
+    let tHTML='';
+    wsList.forEach(ws=>{
+      d.tasks[ws].filter(t=>t.dueDate===dstr&&t.status!=='completed').forEach(t=>{
+        tHTML+=`<div class="wk-task p-${t.priority}" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="display:flex;align-items:center;gap:5px;padding-left:5px"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${currentWPWS==='both'?`<span style="font-size:9px;font-family:Fira Code,monospace;color:var(--text3)">${ws==='work'?'Práce':'Osobní'}</span>`:''}</div></div>`;
+      });
+      d.tasks[ws].filter(t=>t.recur&&t.recur!=='none'&&isRecurToday(t,dstr)&&t.status!=='completed'&&t.dueDate!==dstr).forEach(t=>{
+        tHTML+=`<div class="wk-task p-${t.priority}" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="padding-left:5px"><span class="tti-recur">🔁</span></div></div>`;
+      });
+    });
+    if(!tHTML)tHTML='<div class="wk-empty">—</div>';
+    col.innerHTML=`<div class="wk-col-head"><div class="wk-dayname">${DAYS_S[i]}</div><div class="wk-datenum">${pad(dt.getDate())}</div><div class="wk-mon">${MONTHS_S[dt.getMonth()]}</div></div><div class="wk-col-body">${tHTML}</div>`;
+    c.appendChild(col);
+  }
+}
+
+// ═══════ SPORT TRACKER ═══════
+function renderSportFilters(){
+  const container=document.getElementById('sport-filters');container.innerHTML='';
+  // All chip
+  const all=document.createElement('div');all.className='sport-filter-chip'+(activeSportFilter==='all'?' active':'');all.textContent='Vše';all.onclick=()=>{activeSportFilter='all';renderSportFilters();renderSportGrid()};container.appendChild(all);
+  SPORTS.forEach(s=>{
+    const chip=document.createElement('div');chip.className='sport-filter-chip'+(activeSportFilter===s.id?' active':'');
+    chip.innerHTML=s.icon+' '+s.name;chip.onclick=()=>{activeSportFilter=s.id;renderSportFilters();renderSportGrid()};
+    container.appendChild(chip);
+  });
+}
+function renderSportGrid(){
+  const d=getPD();if(!d)return;
+  const g=document.getElementById('sport-grid');g.innerHTML='';
+  if(!selWeekMon)return;
+  const visibleSports=activeSportFilter==='all'?SPORTS:SPORTS.filter(s=>s.id===activeSportFilter);
+  const cols=1+5;
+  g.style.gridTemplateColumns='140px repeat(5,1fr)';
+  // header
+  const empty=document.createElement('div');g.appendChild(empty);
+  for(let i=0;i<5;i++){
+    const dt=new Date(selWeekMon);dt.setDate(selWeekMon.getDate()+i);
+    const lbl=document.createElement('div');lbl.className='sport-col-head';lbl.textContent=DAYS_S[i];g.appendChild(lbl);
+  }
+  visibleSports.forEach(sport=>{
+    const nameEl=document.createElement('div');nameEl.className='sport-act-name';
+    nameEl.innerHTML=`<span class="sport-act-icon">${sport.icon}</span>${sport.name}`;g.appendChild(nameEl);
+    for(let i=0;i<5;i++){
+      const dt=new Date(selWeekMon);dt.setDate(selWeekMon.getDate()+i);
+      const key=dsDate(dt)+'_'+sport.id;
+      const isDone=d.sportLog[key]||false;
+      const btn=document.createElement('div');btn.className='sport-toggle'+(isDone?' done':'');
+      btn.onclick=()=>{d.sportLog[key]=!d.sportLog[key];saveState();renderSportGrid()};g.appendChild(btn);
+    }
+  });
+}
+
+// ═══════ WEEKLY GOALS ═══════
+function getGoalWeekMon(){const base=getMon(new Date());const m=new Date(base);m.setDate(base.getDate()+currentGoalWeekOffset*7);return m}
+function shiftGoalWeek(dir){currentGoalWeekOffset+=dir;renderGoalsPage()}
+function renderGoalsPage(){
+  const d=getPD();if(!d)return;
+  const mon=getGoalWeekMon();const fri=new Date(mon);fri.setDate(mon.getDate()+4);
+  const wk=weekKey(mon);const wn=weekNum(mon);
+  document.getElementById('wg-week-label').textContent='Týden '+wn;
+  document.getElementById('goals-week-sub').textContent='Týden '+wn+' · '+fshort(mon)+' – '+fshort(fri);
+  if(!d.weeklyGoals[wk])d.weeklyGoals[wk]=[];
+  const goals=d.weeklyGoals[wk];
+  const grid=document.getElementById('goals-grid');grid.innerHTML='';
+  goals.forEach((g,gi)=>{
+    const card=document.createElement('div');card.className='goal-card';
+    // calc progress
+    let pct=0,progressDetail='';
+    if(g.type==='habit'){
+      const days=g.days||[false,false,false,false,false,false,false];
+      const checked=days.filter(Boolean).length;
+      pct=Math.round((checked/7)*100);
+      progressDetail=`${checked}/7 dní`;
+    } else {
+      const entries=g.entries||[0,0,0,0,0,0,0];
+      const sum=entries.reduce((a,b)=>a+b,0);
+      const target=g.target||1;
+      pct=Math.min(100,Math.round((sum/target)*100));
+      progressDetail=`${sum} / ${target} ${g.unit||''}`;
+    }
+    const fillColor=pct<33?'var(--red)':pct<66?'var(--amber)':'var(--green)';
+    const typeLabel=g.type==='habit'?'Návyk':'Numerický';
+    const typeCls=g.type==='habit'?'gc-type-habit':'gc-type-numeric';
+    // day labels
+    const dayLbls=['Po','Út','St','Čt','Pá','So','Ne'];
+    let daysHTML='';
+    if(g.type==='habit'){
+      const days=g.days||[false,false,false,false,false,false,false];
+      daysHTML=`<div class="gc-days">`;
+      days.forEach((checked,di)=>{
+        daysHTML+=`<div class="gc-day-col"><div class="gc-day-lbl">${dayLbls[di]}</div><div class="gc-day-cb ${checked?'checked':''}" onclick="toggleGoalDay('${wk}',${gi},${di})"></div></div>`;
+      });
+      daysHTML+=`</div>`;
+    } else {
+      const entries=g.entries||[0,0,0,0,0,0,0];
+      daysHTML=`<div class="gc-numeric-grid">`;
+      entries.forEach((val,di)=>{
+        daysHTML+=`<div class="gc-num-col"><div class="gc-num-lbl">${dayLbls[di]}</div><input type="number" class="gc-num-inp" value="${val||''}" placeholder="0" min="0" oninput="updateGoalEntry('${wk}',${gi},${di},this.value)"></div>`;
+      });
+      daysHTML+=`</div>`;
+    }
+    card.innerHTML=`
+      <div class="gc-head">
+        <div class="gc-title">${g.title}</div>
+        <span class="gc-type-badge ${typeCls}">${typeLabel}</span>
+        <button class="gc-del" onclick="deleteGoal('${wk}',${gi})">✕</button>
+      </div>
+      <div class="gc-progress-wrap">
+        <div class="gc-progress-row">
+          <div class="gc-track"><div class="gc-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+          <div class="gc-pct-label" style="color:${fillColor}">${pct}%</div>
+        </div>
+        <div class="gc-stats-row">
+          <div class="gc-stat"><div class="gc-stat-val">${pct}%</div><div class="gc-stat-lbl">Splnění</div></div>
+          <div class="gc-stat"><div class="gc-stat-val" style="font-size:13px">${progressDetail}</div><div class="gc-stat-lbl">Pokrok</div></div>
+        </div>
+      </div>
+      ${daysHTML}
+    `;
+    grid.appendChild(card);
+  });
+  // add goal card
+  const add=document.createElement('div');add.className='add-goal-card';add.onclick=openGoalModal;
+  add.innerHTML=`<div class="add-goal-icon">🎯</div><div class="add-goal-label">Přidat týdenní cíl</div>`;
+  grid.appendChild(add);
+}
+function toggleGoalDay(wk,gi,di){
+  const d=getPD();if(!d)return;
+  if(!d.weeklyGoals[wk]||!d.weeklyGoals[wk][gi])return;
+  const g=d.weeklyGoals[wk][gi];
+  if(!g.days)g.days=[false,false,false,false,false,false,false];
+  g.days[di]=!g.days[di];saveState();renderGoalsPage();
+}
+function updateGoalEntry(wk,gi,di,val){
+  const d=getPD();if(!d)return;
+  if(!d.weeklyGoals[wk]||!d.weeklyGoals[wk][gi])return;
+  const g=d.weeklyGoals[wk][gi];
+  if(!g.entries)g.entries=[0,0,0,0,0,0,0];
+  g.entries[di]=parseFloat(val)||0;saveState();
+  // update progress live without full re-render
+  const entries=g.entries;const sum=entries.reduce((a,b)=>a+b,0);
+  const target=g.target||1;const pct=Math.min(100,Math.round((sum/target)*100));
+  const fillColor=pct<33?'var(--red)':pct<66?'var(--amber)':'var(--green)';
+  const cards=document.querySelectorAll('#goals-grid .goal-card');
+  if(cards[gi]){
+    const fill=cards[gi].querySelector('.gc-fill');if(fill){fill.style.width=pct+'%';fill.style.background=fillColor}
+    const pctLbl=cards[gi].querySelector('.gc-pct-label');if(pctLbl){pctLbl.textContent=pct+'%';pctLbl.style.color=fillColor}
+    const statVals=cards[gi].querySelectorAll('.gc-stat-val');
+    if(statVals[0])statVals[0].textContent=pct+'%';
+    if(statVals[1])statVals[1].textContent=`${sum} / ${target} ${g.unit||''}`;
+  }
+}
+function deleteGoal(wk,gi){
+  const d=getPD();if(!d)return;
+  if(!d.weeklyGoals[wk])return;
+  d.weeklyGoals[wk].splice(gi,1);saveState();renderGoalsPage();
+}
+
+// GOAL MODAL
+function openGoalModal(){goalModalType='habit';selGoalType('habit');document.getElementById('gm-title').value='';document.getElementById('gm-target').value='';document.getElementById('gm-unit').value='';document.getElementById('goal-modal-ov').classList.add('open');setTimeout(()=>document.getElementById('gm-title').focus(),80)}
+function closeGoalModal(){document.getElementById('goal-modal-ov').classList.remove('open')}
+function closeGoalModalOut(e){if(e.target===document.getElementById('goal-modal-ov'))closeGoalModal()}
+function selGoalType(type){
+  goalModalType=type;
+  document.getElementById('gto-habit').classList.toggle('sel',type==='habit');
+  document.getElementById('gto-numeric').classList.toggle('sel',type==='numeric');
+  document.getElementById('gm-target-field').style.display=type==='numeric'?'block':'none';
+  document.getElementById('gm-unit-field').style.display=type==='numeric'?'block':'none';
+}
+function saveGoal(){
+  const title=document.getElementById('gm-title').value.trim();if(!title)return;
+  const d=getPD();if(!d)return;
+  const wk=weekKey(getGoalWeekMon());
+  if(!d.weeklyGoals[wk])d.weeklyGoals[wk]=[];
+  const goal={title,type:goalModalType};
+  if(goalModalType==='habit'){goal.days=[false,false,false,false,false,false,false]}
+  else{goal.target=parseFloat(document.getElementById('gm-target').value)||100;goal.unit=document.getElementById('gm-unit').value.trim();goal.entries=[0,0,0,0,0,0,0]}
+  d.weeklyGoals[wk].push(goal);saveState();closeGoalModal();renderGoalsPage();
+}
+
+// ═══════ STATISTICS ═══════
+function renderStats(){
+  const d=getPD();if(!d)return;
+  const all=[...d.tasks.work,...d.tasks.personal];
+  const done=all.filter(t=>t.status==='completed').length;
+  const now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const thisMonthDone=d.completedDates.filter(ds=>new Date(ds+'T00:00:00')>=monthStart).length;
+  const streak=calcStreak(d);
+  const weeks=Math.max(1,Math.ceil(d.completedDates.length/7));
+  document.getElementById('st-done').textContent=done;document.getElementById('st-month').textContent=thisMonthDone;
+  document.getElementById('st-streak').textContent=streak;document.getElementById('st-avg').textContent=Math.round(done/weeks);
+  renderHeatmap(d);renderCompletionChart(d);
+}
+function renderHeatmap(d){
+  const wrap=document.getElementById('heatmap-wrap');if(!wrap)return;wrap.innerHTML='';
+  const now=new Date();const startDate=new Date(now);startDate.setDate(now.getDate()-181);
+  startDate.setDate(startDate.getDate()-(startDate.getDay()||7)+1);
+  const goalPct={};
+  Object.entries(d.weeklyGoals||{}).forEach(([wk,goals])=>{
+    if(!goals||!goals.length)return;
+    let totalPct=0;
+    goals.forEach(g=>{
+      if(g.type==='habit'){const days=g.days||[];totalPct+=Math.round((days.filter(Boolean).length/7)*100)}
+      else{const entries=g.entries||[];const sum=entries.reduce((a,b)=>a+b,0);totalPct+=Math.min(100,Math.round((sum/(g.target||1))*100))}
+    });
+    const avg=totalPct/goals.length;
+    const parts=wk.split('-W');if(parts.length!==2)return;
+    const yr=parseInt(parts[0]),wn=parseInt(parts[1]);
+    const jan4=new Date(yr,0,4);const weekStart=new Date(jan4);
+    weekStart.setDate(jan4.getDate()-(jan4.getDay()||7)+1+(wn-1)*7);
+    for(let i=0;i<7;i++){const dt=new Date(weekStart);dt.setDate(weekStart.getDate()+i);goalPct[dsDate(dt)]=avg}
+  });
+  d.completedDates.forEach(ds=>{if(!goalPct[ds])goalPct[ds]=40});
+  const dayLbls=['','Po','','St','','Pá',''];
+  const hm=document.createElement('div');hm.className='heatmap';
+  for(let dow=0;dow<7;dow++){
+    const row=document.createElement('div');row.className='hm-row';
+    const lbl=document.createElement('div');lbl.className='hm-label';lbl.textContent=dayLbls[dow];row.appendChild(lbl);
+    for(let wk=0;wk<26;wk++){
+      const dt=new Date(startDate);dt.setDate(startDate.getDate()+wk*7+dow);
+      const pct=goalPct[dsDate(dt)]||0;
+      const cell=document.createElement('div');
+      cell.className='hm-cell'+(pct>=75?' l4':pct>=50?' l3':pct>=25?' l2':pct>0?' l1':'');
+      cell.title=dsDate(dt)+(pct>0?' — '+Math.round(pct)+'%':'');row.appendChild(cell);
+    }
+    hm.appendChild(row);
+  }
+  wrap.appendChild(hm);
+}
+function renderCompletionChart(d){
+  const bars=document.getElementById('chart-bars');if(!bars)return;bars.innerHTML='';
+  const now=new Date();const data=[];
+  for(let i=13;i>=0;i--){const dt=new Date(now);dt.setDate(now.getDate()-i);const ds=dsDate(dt);data.push({label:dt.getDate()+'',cnt:d.completedDates.filter(x=>x===ds).length})}
+  const max=Math.max(1,...data.map(x=>x.cnt));
+  data.forEach(item=>{
+    const wrap=document.createElement('div');wrap.className='chart-bar-wrap';
+    const bar=document.createElement('div');bar.className='chart-bar';bar.style.height=Math.max(4,Math.round((item.cnt/max)*76))+'px';
+    const lbl=document.createElement('div');lbl.className='chart-bar-lbl';lbl.textContent=item.label;
+    wrap.appendChild(bar);wrap.appendChild(lbl);bars.appendChild(wrap);
+  });
+}
+
+// ═══════ PROJECTS ═══════
+function renderProjectsPage(){
+  const d=getPD();if(!d)return;
+  const list=document.getElementById('proj-list');list.innerHTML='';
+  const pids=Object.keys(d.projects);
+  if(!pids.length)list.innerHTML='<div style="padding:16px;text-align:center;font-size:11px;color:var(--text3);font-family:Fira Code,monospace">Žádné projekty.<br>Klikněte + pro vytvoření.</div>';
+  pids.forEach(pid=>{
+    const proj=d.projects[pid];
+    const item=document.createElement('div');item.className='proj-list-item'+(currentProjectId===pid?' active':'');
+    item.innerHTML=`<span class="proj-list-dot" style="background:${proj.color}"></span><span class="proj-list-name">${proj.name}</span><button class="proj-list-del" onclick="deleteProject(event,'${pid}')">✕</button>`;
+    item.onclick=(e)=>{if(e.target.classList.contains('proj-list-del'))return;currentProjectId=pid;renderProjectsPage()};list.appendChild(item);
+  });
+  renderSidebar();
+  const main=document.getElementById('proj-main');
+  if(!currentProjectId||!d.projects[currentProjectId]){main.innerHTML='<div class="proj-no-selection">← Vyberte nebo vytvořte projekt</div>';return}
+  const proj=d.projects[currentProjectId];
+  main.innerHTML='';
+  const head=document.createElement('div');head.className='proj-main-head';
+  head.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><span style="width:12px;height:12px;border-radius:50%;background:${proj.color};display:inline-block;flex-shrink:0"></span><div class="proj-main-title" contenteditable="true" onblur="renameProject('${currentProjectId}',this.textContent)">${proj.name}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-secondary" onclick="addProjSection('${currentProjectId}','tasks')">+ Úkoly</button><button class="btn-secondary" onclick="addProjSection('${currentProjectId}','notes')">+ Poznámky</button><button class="btn-secondary" onclick="addProjSection('${currentProjectId}','links')">+ Odkazy</button><button class="btn-secondary" onclick="addProjSection('${currentProjectId}','files')">+ Soubory</button></div>`;
+  main.appendChild(head);
+  const body=document.createElement('div');body.className='proj-main-body';
+  (proj.sections||[]).forEach((sect,si)=>{
+    const sectEl=document.createElement('div');sectEl.className='proj-section';
+    const sHead=document.createElement('div');sHead.className='proj-sect-head';
+    sHead.innerHTML=`<input class="proj-sect-title" value="${sect.title}" onchange="renameProjSection('${currentProjectId}',${si},this.value)"><button class="proj-sect-del" onclick="deleteProjSection('${currentProjectId}',${si})">✕</button>`;
+    sectEl.appendChild(sHead);
+    const sBody=document.createElement('div');sBody.className='proj-sect-body';
+    if(sect.type==='notes'){
+      const ta=document.createElement('textarea');ta.className='proj-notes';ta.placeholder='Napište své poznámky...';ta.value=sect.content||'';ta.oninput=()=>{sect.content=ta.value;saveState()};sBody.appendChild(ta);
+    } else if(sect.type==='tasks'){
+      const tl=document.createElement('div');tl.className='proj-task-list';
+      (sect.items||[]).forEach((item,ii)=>{
+        const row=document.createElement('div');row.className='proj-task-item';
+        row.innerHTML=`<input type="checkbox" ${item.done?'checked':''} style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer" onchange="toggleProjTask('${currentProjectId}',${si},${ii},event)"><span style="flex:1;font-size:12px;color:${item.done?'var(--text3)':'var(--text)'};${item.done?'text-decoration:line-through':''}">${item.text}</span><button class="proj-task-del" onclick="delProjItem('${currentProjectId}',${si},${ii})">✕</button>`;
+        tl.appendChild(row);
+      });
+      const ar=document.createElement('div');ar.style.cssText='display:flex;gap:7px;margin-top:4px';
+      ar.innerHTML=`<input placeholder="Přidat úkol..." class="b-inp" id="pti-${si}" style="font-size:12px"><button class="b-add-btn" onclick="addProjItem('${currentProjectId}',${si},'tasks')">+ Přidat</button>`;
+      sBody.appendChild(tl);sBody.appendChild(ar);
+    } else if(sect.type==='links'){
+      const ll=document.createElement('div');ll.className='proj-link-list';
+      (sect.items||[]).forEach((item,ii)=>{
+        const row=document.createElement('div');row.className='proj-link-item';
+        row.innerHTML=`<span>🔗</span><a href="${item.url}" target="_blank" style="flex:1;color:var(--accent);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.label||item.url}</a><button class="proj-link-del" onclick="delProjItem('${currentProjectId}',${si},${ii})">✕</button>`;
+        ll.appendChild(row);
+      });
+      const ar=document.createElement('div');ar.style.cssText='display:flex;gap:7px;margin-top:4px;flex-wrap:wrap';
+      ar.innerHTML=`<input placeholder="Popisek" class="b-inp" id="pll-${si}" style="font-size:12px;flex:1;min-width:80px"><input placeholder="https://..." class="b-inp" id="plu-${si}" style="font-size:12px;flex:2;min-width:120px"><button class="b-add-btn" onclick="addProjItem('${currentProjectId}',${si},'links')">+ Přidat</button>`;
+      sBody.appendChild(ll);sBody.appendChild(ar);
+    } else if(sect.type==='files'){
+      const fl=document.createElement('div');fl.className='proj-file-list';
+      (sect.items||[]).forEach((item,ii)=>{
+        const row=document.createElement('div');row.className='proj-file-item';
+        row.innerHTML=`<span>📎</span><span style="flex:1;font-size:12px">${item.name}</span><span style="font-size:10px;font-family:Fira Code,monospace;color:var(--text3)">${item.size||''}</span><button class="proj-file-del" onclick="delProjItem('${currentProjectId}',${si},${ii})">✕</button>`;
+        fl.appendChild(row);
+      });
+      const ar=document.createElement('div');ar.style.cssText='display:flex;gap:7px;margin-top:4px';
+      ar.innerHTML=`<input placeholder="Název souboru (např. zpráva_Q2.pdf)" class="b-inp" id="pfi-${si}" style="font-size:12px"><input placeholder="Velikost (2.4 MB)" class="b-inp" id="pfs-${si}" style="font-size:12px;max-width:100px"><button class="b-add-btn" onclick="addProjItem('${currentProjectId}',${si},'files')">+ Přidat</button>`;
+      sBody.appendChild(fl);sBody.appendChild(ar);
+    }
+    sectEl.appendChild(sBody);body.appendChild(sectEl);
+  });
+  if(!(proj.sections||[]).length){const e=document.createElement('div');e.className='proj-no-selection';e.style.padding='30px 0';e.innerHTML='<div style="font-size:24px;margin-bottom:8px">📄</div>Přidejte sekce pomocí tlačítek výše';body.appendChild(e)}
+  main.appendChild(body);
+}
+function createProject(){const name=prompt('Název projektu:');if(!name)return;const d=getPD();if(!d)return;const pid='proj_'+Date.now();const color=PROJ_COLORS[Object.keys(d.projects).length%PROJ_COLORS.length];d.projects[pid]={id:pid,name,color,sections:[]};currentProjectId=pid;saveState();renderProjectsPage();renderSidebar()}
+function renameProject(pid,name){const d=getPD();if(!d)return;if(d.projects[pid]&&name.trim())d.projects[pid].name=name.trim();saveState();renderSidebar()}
+function deleteProject(e,pid){e.stopPropagation();showConfirm('Smazat projekt','Trvale smazat projekt a veškerý jeho obsah?',()=>{const d=getPD();if(!d)return;delete d.projects[pid];if(currentProjectId===pid)currentProjectId=null;saveState();renderProjectsPage();renderSidebar()})}
+function addProjSection(pid,type){const d=getPD();if(!d)return;if(!d.projects[pid].sections)d.projects[pid].sections=[];const titles={tasks:'Úkoly',notes:'Poznámky',links:'Odkazy',files:'Soubory'};d.projects[pid].sections.push({type,title:titles[type],items:[],content:''});saveState();renderProjectsPage()}
+function renameProjSection(pid,si,val){const d=getPD();if(!d)return;if(d.projects[pid].sections[si])d.projects[pid].sections[si].title=val;saveState()}
+function deleteProjSection(pid,si){const d=getPD();if(!d)return;d.projects[pid].sections.splice(si,1);saveState();renderProjectsPage()}
+function addProjItem(pid,si,type){
+  const d=getPD();if(!d)return;const sect=d.projects[pid].sections[si];if(!sect)return;if(!sect.items)sect.items=[];
+  if(type==='tasks'){const inp=document.getElementById('pti-'+si);if(!inp||!inp.value.trim())return;sect.items.push({text:inp.value.trim(),done:false});inp.value=''}
+  else if(type==='links'){const li=document.getElementById('pll-'+si),lu=document.getElementById('plu-'+si);if(!lu||!lu.value.trim())return;sect.items.push({label:li?li.value.trim():'',url:lu.value.trim()});if(li)li.value='';lu.value=''}
+  else if(type==='files'){const fi=document.getElementById('pfi-'+si),fs=document.getElementById('pfs-'+si);if(!fi||!fi.value.trim())return;sect.items.push({name:fi.value.trim(),size:fs?fs.value.trim():''});fi.value='';if(fs)fs.value=''}
+  saveState();renderProjectsPage();
+}
+function delProjItem(pid,si,ii){const d=getPD();if(!d)return;d.projects[pid].sections[si].items.splice(ii,1);saveState();renderProjectsPage()}
+function toggleProjTask(pid,si,ii,e){const d=getPD();if(!d)return;d.projects[pid].sections[si].items[ii].done=e.target.checked;saveState();renderProjectsPage()}
+
+// ═══════ SETTINGS ═══════
+function renderSettingsPage(){
+  const list=document.getElementById('settings-profile-list');list.innerHTML='';
+  Object.values(state.profiles).forEach(p=>{
+    const item=document.createElement('div');item.className='profile-item'+(p.id===activeProfileId?' current':'');
+    item.innerHTML=`<div class="pi-av" style="background:${p.color}">${p.initials}</div><div class="pi-name">${p.name}</div>${p.id!==activeProfileId?`<span class="pi-switch" onclick="enterApp('${p.id}')">Přepnout</span>`:''}<button class="pi-del" onclick="deleteProfile('${p.id}')">✕</button>`;
+    list.appendChild(item);
+  });
+}
+function deleteProfile(pid){if(Object.keys(state.profiles).length<=1&&pid===activeProfileId){alert('Nelze smazat jediný profil.');return}showConfirm('Smazat profil','Trvale smazat tento profil a všechna jeho data?',()=>{delete state.profiles[pid];if(activeProfileId===pid){activeProfileId=null;state.activeProfile=null;saveState();signOut({stopPropagation:()=>{}})}else{saveState();renderSettingsPage()}})}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flowtask_export_'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+function importData(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const imp=JSON.parse(ev.target.result);state=imp;saveState();if(state.activeProfile&&state.profiles[state.activeProfile])enterApp(state.activeProfile);else{document.getElementById('app').classList.remove('show');document.getElementById('profile-screen').style.display='flex';renderProfileScreen()}}catch(err){alert('Neplatný soubor JSON.')}};reader.readAsText(file);e.target.value=''}
+function confirmReset(){showConfirm('Smazat všechna data','Trvale smazat VŠECHNA data pro všechny profily. Tuto akci nelze vrátit zpět.',()=>{localStorage.removeItem('flowtask_v6');location.reload()})}
+
+// ═══════ CONFIRM ═══════
+function showConfirm(title,msg,cb){document.getElementById('confirm-title').textContent=title;document.getElementById('confirm-msg').textContent=msg;confirmCallback=cb;document.getElementById('confirm-ov').classList.add('open')}
+function closeConfirm(){document.getElementById('confirm-ov').classList.remove('open');confirmCallback=null}
+document.getElementById('confirm-ok-btn').onclick=()=>{if(confirmCallback)confirmCallback();closeConfirm()}
+
+// ═══════ SEED DATA ═══════
+function seedData(pid){
+  const d=state.profiles[pid].data;const now=new Date();
+  function D(off){const dt=new Date(now);dt.setDate(now.getDate()+off);return dsDate(dt)}
+  d.tasks.work=[
+    {id:nextId++,title:'Čtvrtletní zpráva Q2',priority:'high',dueDate:D(0),status:'inprogress',recur:'none',bullets:[{text:'Shrnutí pro vedení',done:true},{text:'Finanční sekce',done:false},{text:'Review s týmem',done:false}],notes:'Termín konec týdne'},
+    {id:nextId++,title:'Redesign webu',priority:'medium',dueDate:D(2),status:'ideas',recur:'none',bullets:[{text:'Wireframy',done:true},{text:'Kontrola textu',done:false}],notes:''},
+    {id:nextId++,title:'E-maily klientům',priority:'low',dueDate:D(4),status:'ideas',recur:'none',bullets:[],notes:''},
+    {id:nextId++,title:'Plánování sprintu',priority:'high',dueDate:D(1),status:'completed',recur:'weekly',bullets:[{text:'User stories',done:true},{text:'Odhady',done:true}],notes:''},
+    {id:nextId++,title:'Denní standup',priority:'low',dueDate:D(0),status:'ideas',recur:'weekdays',bullets:[],notes:''},
+  ];
+  d.tasks.personal=[
+    {id:nextId++,title:'Objednat k zubaři',priority:'medium',dueDate:D(3),status:'ideas',recur:'none',bullets:[],notes:''},
+    {id:nextId++,title:'Plán na víkend — turistika',priority:'low',dueDate:null,status:'ideas',recur:'none',bullets:[{text:'Vybrat trasu',done:false},{text:'Zabalit vybavení',done:false}],notes:''},
+    {id:nextId++,title:'Ranní běh',priority:'low',dueDate:D(0),status:'ideas',recur:'weekdays',bullets:[],notes:'Cíl: 30 minut'},
+    {id:nextId++,title:'Opravit polici v kuchyni',priority:'high',dueDate:D(4),status:'inprogress',recur:'none',bullets:[{text:'Koupit šrouby',done:true},{text:'Vyvrtat otvory',done:false}],notes:''},
+  ];
+  const wk=weekKey(now);
+  d.weeklyGoals[wk]=[
+    {title:'Vstávat v 5:00 každý den',type:'habit',days:[true,true,false,true,false,false,false]},
+    {title:'1 000 kliků celkem',type:'numeric',target:1000,unit:'kliků',entries:[80,120,0,95,0,0,0]},
+    {title:'Přečíst 50 stránek',type:'numeric',target:50,unit:'stran',entries:[10,15,0,12,0,0,0]},
+  ];
+  const mon=getMon(now);
+  [{sport:'running',day:0},{sport:'gym',day:1},{sport:'yoga',day:2},{sport:'running',day:3}].forEach(({sport,day})=>{const dt=new Date(mon);dt.setDate(mon.getDate()+day);d.sportLog[dsDate(dt)+'_'+sport]=true});
+  for(let i=0;i<14;i++){if(Math.random()>0.35){const dt=new Date(now);dt.setDate(now.getDate()-i);d.completedDates.push(dsDate(dt))}}
+  const projId='proj_seed';d.projects[projId]={id:projId,name:'Redesign webu',color:'#4F46E5',sections:[
+    {type:'tasks',title:'Úkoly',items:[{text:'Vytvořit wireframy',done:true},{text:'Navrhnout mockupy',done:false},{text:'Frontend vývoj',done:false}]},
+    {type:'notes',title:'Poznámky',content:'Hlavní cíl: zvýšit konverzní poměr o 15 %.\nFokus na mobile-first design.\nCílové spuštění: konec Q2.'},
+    {type:'links',title:'Zdroje',items:[{label:'Figma Design File',url:'https://figma.com'},{label:'Brand Guidelines',url:'https://example.com'}]},
+  ]};
+  currentProjectId=projId;
+}
+
+// ═══════ BOOT ═══════
+loadState();
+if(activeProfileId&&state.profiles[activeProfileId]){
+  document.getElementById('profile-screen').style.display='none';
+  document.getElementById('app').classList.add('show');initApp();
+} else {renderProfileScreen()}
+</script>
+</body>
+</html>
