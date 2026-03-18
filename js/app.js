@@ -363,18 +363,21 @@ function renderDashboard(){
   }
 
   const ttl=document.getElementById('today-tasks-list');if(ttl){ttl.innerHTML='';
-  const activeTodayTasks=todayTasks.filter(t=>t.status!=='completed');
+  const openToday=todayTasks.filter(t=>t.status!=='completed');
+  const doneToday=todayTasks.filter(t=>t.status==='completed');
   const todayActs=getActivitiesForDate(d,today);
   const activeActs=todayActs.filter(a=>!d.activityLog[today+'_'+a.id]);
-  if(!activeTodayTasks.length && !activeActs.length){ttl.innerHTML='<div class="empty-state">Žádné dnešní úkoly — skvělá práce! 🎉</div>'}
+  if(!openToday.length && !doneToday.length && !activeActs.length){ttl.innerHTML='<div class="empty-state">Žádné dnešní úkoly — skvělá práce! 🎉</div>'}
   else {
-  activeTodayTasks.slice(0,10).forEach(t=>{
+  function appendTodayTaskRow(t,isDone){
     const ws=d.tasks.work.find(x=>x.id===t.id)?'Práce':'Osobní';
     const wsKey=d.tasks.work.find(x=>x.id===t.id)?'work':'personal';
-    const div=document.createElement('div');div.className='today-task-item p-'+t.priority+'-t';
-    div.innerHTML=`<div class="tti-check ${t.status==='completed'?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${t.status==='completed'?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><div class="tti-actions"><button class="tact edit" onclick="openTaskModal('${wsKey}',${t.id});event.stopPropagation()">✎</button><button class="tact del" onclick="deleteTask('${wsKey}',${t.id});event.stopPropagation()">✕</button></div>`;
+    const div=document.createElement('div');div.className='today-task-item p-'+t.priority+'-t'+(isDone?' today-task-done':'');
+    div.innerHTML=`<div class="tti-check ${isDone?'done':''}" onclick="quickComplete(${t.id})"></div><div style="flex:1;min-width:0"><div class="tti-title ${isDone?'done':''}">${t.title}</div><div class="tti-meta"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${t.recur&&t.recur!=='none'?`<span class="tti-recur">🔁 ${t.recur==='daily'?'Denně':t.recur==='weekdays'?'Pracovní dny':t.recur==='weekly'?'Týdně':'Měsíčně'}</span>`:''}<span class="tti-ws">${ws}</span></div></div><div class="tti-actions"><button class="tact edit" onclick="openTaskModal('${wsKey}',${t.id});event.stopPropagation()">✎</button><button class="tact del" onclick="deleteTask('${wsKey}',${t.id});event.stopPropagation()">✕</button></div>`;
     ttl.appendChild(div);
-  });
+  }
+  openToday.slice(0,15).forEach(t=>appendTodayTaskRow(t,false));
+  doneToday.slice(0,10).forEach(t=>appendTodayTaskRow(t,true));
   activeActs.slice(0,10).forEach(a=>{
     const key=today+'_'+a.id;
     const div=document.createElement('div');div.className='today-task-item p-low-t';
@@ -695,6 +698,12 @@ function renderWeeklyGrid(){
       });
       d.tasks[ws].filter(t=>t.recur&&t.recur!=='none'&&isRecurToday(t,dstr)&&t.status!=='completed'&&t.dueDate!==dstr).forEach(t=>{
         tHTML+=`<div class="wk-task p-${t.priority}" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="padding-left:5px"><span class="tti-recur">🔁</span></div></div>`;
+      });
+      d.tasks[ws].filter(t=>t.dueDate===dstr&&t.status==='completed').forEach(t=>{
+        tHTML+=`<div class="wk-task p-${t.priority} wk-task-done" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="display:flex;align-items:center;gap:5px;padding-left:5px"><span class="pbadge p-${t.priority}">${t.priority==='high'?'Vysoká':t.priority==='medium'?'Střední':'Nízká'}</span>${currentWPWS==='both'?`<span style="font-size:9px;font-family:Fira Code,monospace;color:var(--text3)">${ws==='work'?'Práce':'Osobní'}</span>`:''}</div></div>`;
+      });
+      d.tasks[ws].filter(t=>t.recur&&t.recur!=='none'&&isRecurToday(t,dstr)&&t.status==='completed'&&t.dueDate!==dstr).forEach(t=>{
+        tHTML+=`<div class="wk-task p-${t.priority} wk-task-done" onclick="openTaskModal('${ws}',${t.id})"><div class="wk-task-title">${t.title}</div><div style="padding-left:5px"><span class="tti-recur">🔁</span></div></div>`;
       });
     });
     // activities list
